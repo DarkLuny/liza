@@ -204,8 +204,6 @@
 <canvas id="heartCanvas"></canvas>
 <canvas id="glassCanvas"></canvas>
 
-<button id="soundToggle" title="Звук">🔊</button>
-
 <div class="stage">
   <div class="card floating" id="card1">
     <div class="title">Люблю тебя<br>А ты?</div>
@@ -1391,13 +1389,6 @@ heartCanvas.addEventListener('touchstart', e => {
   if (t) handleInteract(t.clientX, t.clientY);
 }, { passive: true });
 
-const soundToggle = document.getElementById('soundToggle');
-soundToggle.addEventListener('click', e => {
-  e.stopPropagation();
-  const m = sfx.toggle();
-  soundToggle.textContent = m ? '🔇' : '🔊';
-  if (!m) sfx.tap(window.innerWidth * 0.9);
-});
 
 ['pointerdown', 'touchstart', 'keydown'].forEach(ev =>
   window.addEventListener(ev, () => sfx.arm(), { capture: true, passive: true })
