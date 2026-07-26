@@ -2,162 +2,648 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Для тебя 💕</title>
-<link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@500;700&family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-body, html {
-  width: 100%; height: 100%; overflow: hidden;
-  font-family: 'Nunito', sans-serif;
-  background: #ff9a9e;
-  display: flex; justify-content: center; align-items: center;
-}
-#heartCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
-#glassCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; }
-.card {
-  position: relative; z-index: 10;
-  background: transparent; border: none;
-  border-radius: 32px; padding: 40px 30px;
-  text-align: center; max-width: 90%; width: 440px;
-}
-.title {
-  font-family: 'Comfortaa', cursive;
-  font-size: 2rem; font-weight: 700;
-  color: #7a1c43; margin-bottom: 30px;
-  text-shadow: 0 2px 10px rgba(255,255,255,0.8);
-  line-height: 1.4;
-}
-.buttons-container { display: flex; justify-content: center; align-items: center; gap: 20px; min-height: 60px; }
-.btn {
-  padding: 14px 32px; font-size: 1.2rem; font-weight: 800;
-  border: none; border-radius: 50px;
-  cursor: pointer; outline: none; background: transparent;
-  transition: transform 0.2s ease;
-}
-.btn-yes { color: white; }
-.btn-yes:hover { transform: scale(1.08); }
-.btn-no { color: #fff; z-index: 100; text-shadow: 0 1px 6px rgba(120,0,25,0.55); }
-#card2 { display: none; opacity: 0; position: absolute; top: 0; left: 0; right: 0; bottom: 0; margin: auto; width: 440px; max-width: 90%; height: fit-content; }
-.love-text { font-size: 1.35rem; color: #63002b; font-weight: 800; line-height: 1.8; }
-.love-text .letter { display: inline-block; cursor: pointer; transition: transform 0.2s ease, color 0.2s ease; }
-.love-text .letter:hover { transform: scale(1.3); color: #ff416c; }
-.love-text .letter.space { width: 0.3em; }
-.love-text .letter.burst { animation: letterBurst 0.5s ease forwards; pointer-events: none; }
-@keyframes letterBurst {
-  0% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(2); opacity: 0.5; color: #ff416c; }
-  100% { transform: scale(0); opacity: 0; }
-}
-.hint { margin-top: 20px; font-size: 0.9rem; color: #aa3d6c; opacity: 0.9; font-style: italic; }
-.fade-out { opacity: 0 !important; transform: scale(0.7) translateY(-30px) !important; }
-.fade-in { display: block !important; animation: smoothAppear 1s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-@keyframes smoothAppear {
-  from { opacity: 0; transform: scale(0.8) translateY(30px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
-}
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    background: #ffb6c8;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  canvas { position: fixed; inset: 0; display: block; }
+  #heartCanvas { z-index: 1; }
+  #glassCanvas { z-index: 2; pointer-events: none; }
+
+  .stage {
+    position: relative;
+    z-index: 3;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  .card {
+    position: relative;
+    width: min(440px, 92vw);
+    padding: 34px 28px;
+    border-radius: 34px;
+    text-align: center;
+    pointer-events: auto;
+    border: 1px solid rgba(255,255,255,0.35);
+    box-shadow:
+      0 18px 50px rgba(150, 30, 80, 0.18),
+      inset 0 1px 0 rgba(255,255,255,0.45);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+
+  #card2 { width: min(440px, 92vw); display: none; }
+
+  .floating { animation: float 7s ease-in-out infinite; }
+  @keyframes float {
+    0%, 100% { transform: translateY(-6px); }
+    50%      { transform: translateY(6px); }
+  }
+
+  .title {
+    font-size: clamp(1.35rem, 6vw, 2rem);
+    font-weight: 700;
+    color: #4e0f2b;
+    line-height: 1.35;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.5);
+    margin-bottom: 26px;
+  }
+
+  .buttons-container {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    position: relative;
+    padding: 14px 34px;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    font-size: clamp(1rem, 4.5vw, 1.2rem);
+    font-weight: 700;
+    font-family: inherit;
+    color: #4e0f2b;
+    cursor: pointer;
+    outline: none;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.45);
+    transition: transform 0.18s cubic-bezier(.34,1.56,.64,1);
+  }
+
+  .btn-yes:hover  { transform: scale(1.1); }
+  .btn-yes:active { transform: scale(0.94); }
+
+  .btn-no {
+    z-index: 100;
+    transition: left 0.42s cubic-bezier(.3,1.15,.4,1),
+                top  0.42s cubic-bezier(.3,1.15,.4,1);
+  }
+  .btn-no.instant { transition: none; }
+
+  .love-text {
+    font-size: clamp(1rem, 4.6vw, 1.35rem);
+    line-height: 1.75;
+    color: #4e0f2b;
+    font-weight: 600;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.45);
+  }
+
+  .love-text .word { display: inline-block; white-space: nowrap; }
+
+  .letter {
+    display: inline-block;
+    cursor: pointer;
+    transition: transform 0.18s cubic-bezier(.34,1.56,.64,1),
+                color 0.18s ease,
+                text-shadow 0.18s ease;
+  }
+  .letter:hover {
+    transform: translateY(-4px) scale(1.15);
+    color: #a1114f;
+    text-shadow:
+      0 0 8px rgba(255,255,255,0.95),
+      0 0 18px rgba(255,120,185,0.95),
+      0 0 30px rgba(255,80,150,0.7);
+  }
+
+  .letter.gone { visibility: hidden; }
+
+  .letter.back1 { animation: backPop 0.75s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes backPop {
+    0%   { transform: scale(0) rotate(-25deg); opacity: 0; }
+    60%  { transform: scale(1.3) rotate(8deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+
+  .letter.back2 { animation: backDrop 0.85s cubic-bezier(.3,1.4,.5,1); }
+  @keyframes backDrop {
+    0%   { transform: translateY(-38px) scale(1.1); opacity: 0; filter: blur(4px); }
+    55%  { transform: translateY(6px) scale(0.94); opacity: 1; filter: blur(0); }
+    75%  { transform: translateY(-3px) scale(1.04); }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+  }
+
+  .letter.back3 { animation: backSpin 0.9s cubic-bezier(.22,1,.3,1); }
+  @keyframes backSpin {
+    0%   { transform: rotateY(90deg) scale(0.6); opacity: 0; }
+    60%  { transform: rotateY(-14deg) scale(1.12); opacity: 1; }
+    100% { transform: rotateY(0deg) scale(1); opacity: 1; }
+  }
+
+  .letter.back4 { animation: backGlow 1s ease-out; }
+  @keyframes backGlow {
+    0%   { opacity: 0; filter: blur(9px); text-shadow: 0 0 26px rgba(255,110,175,1); transform: scale(1.35); }
+    50%  { opacity: 1; filter: blur(2px); text-shadow: 0 0 18px rgba(255,110,175,0.9); transform: scale(1.08); }
+    100% { opacity: 1; filter: blur(0); transform: scale(1); }
+  }
+
+  .letter.back5 { animation: backSwing 0.95s cubic-bezier(.28,1.5,.45,1); }
+  @keyframes backSwing {
+    0%   { transform: translateX(-22px) rotate(-40deg) scale(0.5); opacity: 0; }
+    45%  { transform: translateX(6px) rotate(14deg) scale(1.15); opacity: 1; }
+    70%  { transform: translateX(-3px) rotate(-6deg) scale(0.98); }
+    100% { transform: translateX(0) rotate(0deg) scale(1); opacity: 1; }
+  }
+
+  .letter.back6 { animation: backRise 0.9s cubic-bezier(.25,1.3,.4,1); }
+  @keyframes backRise {
+    0%   { transform: translateY(26px) scaleY(0.4) scaleX(1.25); opacity: 0; }
+    55%  { transform: translateY(-5px) scaleY(1.12) scaleX(0.94); opacity: 1; }
+    100% { transform: translateY(0) scaleY(1) scaleX(1); opacity: 1; }
+  }
+
+  .shard {
+    position: fixed;
+    z-index: 150;
+    pointer-events: none;
+    display: block;
+    text-align: center;
+    will-change: transform, opacity;
+  }
+
+  .fade-out { opacity: 0; transform: scale(0.9); pointer-events: none; }
+  .fade-in  { animation: smoothAppear 0.8s ease forwards; }
+  @keyframes smoothAppear {
+    from { opacity: 0; transform: scale(0.9) translateY(20px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  #soundToggle {
+    position: fixed;
+    top: 14px;
+    right: 14px;
+    z-index: 200;
+    width: 42px;
+    height: 42px;
+    border: 1px solid rgba(255,255,255,0.4);
+    border-radius: 50%;
+    background: rgba(255,255,255,0.18);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+    color: #4e0f2b;
+    transition: transform 0.18s ease, background 0.2s ease;
+  }
+  #soundToggle:hover  { transform: scale(1.1); background: rgba(255,255,255,0.3); }
+  #soundToggle:active { transform: scale(0.92); }
 </style>
 </head>
 <body>
+
 <canvas id="heartCanvas"></canvas>
 <canvas id="glassCanvas"></canvas>
 
-<div class="card" id="card1">
-  <h1 class="title">Ты меня любишь? 💕</h1>
-  <div class="buttons-container" id="btnWrapper">
-    <button class="btn btn-yes" id="btnYes">Да</button>
-    <button class="btn btn-no" id="btnNo">Нет</button>
+<button id="soundToggle" title="Звук">🔊</button>
+
+<div class="stage">
+  <div class="card floating" id="card1">
+    <div class="title">Люблю тебя<br>А ты?</div>
+    <div class="buttons-container" id="btnWrapper">
+      <button class="btn btn-yes" id="btnYes">Да</button>
+      <button class="btn btn-no" id="btnNo">Нет</button>
+    </div>
+  </div>
+
+  <div class="card" id="card2">
+    <div class="love-text" id="loveText"></div>
   </div>
 </div>
 
-<div class="card" id="card2">
-  <p class="love-text" id="loveText"></p>
-  <p class="hint">Нажимай на буквы, чтобы создавать сердечки!</p>
-</div>
-
 <script>
-const btnYes = document.getElementById('btnYes');
-const btnNo = document.getElementById('btnNo');
-const btnWrapper = document.getElementById('btnWrapper');
-const card1 = document.getElementById('card1');
-const card2 = document.getElementById('card2');
-const loveText = document.getElementById('loveText');
-const canvas = document.getElementById('heartCanvas');
-const ctx = canvas.getContext('2d');
+/* ============================================================
+   AUDIO
+   ============================================================ */
+const sfx = (() => {
+  let ctx = null, master = null, muted = false;
+  let armed = false;              // был ли настоящий жест пользователя
 
-const loveMessage = 'Я тебя тоже безумно сильно люблю, котеночек. Ты самое лучшее, что случалось со мной! Будь всегда рядом. </3';
-
-function wrapLetters(text) {
-  let html = '';
-  for (const ch of text) {
-    if (ch === ' ') html += '<span class="letter space"> </span>';
-    else html += `<span class="letter">${ch}</span>`;
+  function ensure() {
+    if (!armed) return null;      // до жеста контекст не создаём вообще
+    if (!ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      ctx = new AC();
+      master = ctx.createGain();
+      master.gain.value = 0.5;
+      master.connect(ctx.destination);
+    }
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
   }
-  loveText.innerHTML = html;
-}
 
-loveText.addEventListener('click', (e) => {
-  const letter = e.target.closest('.letter:not(.space)');
-  if (!letter || letter.classList.contains('burst')) return;
-  const rect = letter.getBoundingClientRect();
-  const cx = rect.left + rect.width / 2;
-  const cy = rect.top + rect.height / 2;
-  letter.classList.add('burst');
-  const h = new Heart3D(cx, cy, 20);
-  h.vx = (Math.random() - 0.5) * 2;
-  h.vy = -Math.random() * 2 - 1;
-  hearts.push(h);
-  for (let i = 0; i < 8; i++) particles.push(new SparkParticle(cx, cy, 350));
-  setTimeout(() => { letter.style.visibility = 'hidden'; }, 500);
-});
+  function arm() {
+    armed = true;
+    return ensure();
+  }
 
-let W, H;
-let hearts = [];
-let particles = [];
+  function tone({ freq = 440, type = 'sine', dur = 0.25, vol = 0.2, delay = 0, glide = null, pan = 0 }) {
+    if (muted) return;
+    const c = ensure(); if (!c) return;
+    const t0 = c.currentTime + delay;
+
+    const osc = c.createOscillator();
+    const g = c.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t0);
+    if (glide !== null) osc.frequency.exponentialRampToValueAtTime(Math.max(20, glide), t0 + dur);
+
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol, t0 + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+
+    let node = g;
+    if (c.createStereoPanner && pan !== 0) {
+      const p = c.createStereoPanner();
+      p.pan.value = Math.max(-1, Math.min(1, pan));
+      g.connect(p);
+      node = p;
+    }
+
+    osc.connect(g);
+    node.connect(master);
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.05);
+  }
+
+  function noise({ dur = 0.18, vol = 0.12, hp = 1200, delay = 0 }) {
+    if (muted) return;
+    const c = ensure(); if (!c) return;
+    const t0 = c.currentTime + delay;
+    const len = Math.floor(c.sampleRate * dur);
+    const buf = c.createBuffer(1, len, c.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / len);
+
+    const src = c.createBufferSource();
+    src.buffer = buf;
+
+    const filt = c.createBiquadFilter();
+    filt.type = 'highpass';
+    filt.frequency.value = hp;
+
+    const g = c.createGain();
+    g.gain.setValueAtTime(vol, t0);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+
+    src.connect(filt); filt.connect(g); g.connect(master);
+    src.start(t0);
+  }
+
+  const panFor = x => (typeof x === 'number' && window.innerWidth) ? (x / window.innerWidth) * 1.6 - 0.8 : 0;
+
+  return {
+    arm,
+    unlock: () => ensure(),
+    get muted() { return muted; },
+    toggle() { muted = !muted; if (!muted) ensure(); return muted; },
+
+    pop(x) {
+      const p = panFor(x);
+      tone({ freq: 520 + Math.random() * 120, type: 'sine', dur: 0.22, vol: 0.16, glide: 190, pan: p });
+      noise({ dur: 0.13, vol: 0.05, hp: 2200 });
+    },
+    split(x) {
+      const p = panFor(x);
+      tone({ freq: 700, type: 'triangle', dur: 0.16, vol: 0.13, glide: 340, pan: p });
+      tone({ freq: 1040, type: 'sine', dur: 0.2, vol: 0.08, glide: 620, delay: 0.05, pan: p });
+      noise({ dur: 0.16, vol: 0.055, hp: 2600 });
+    },
+    restore(x) {
+      const p = panFor(x);
+      tone({ freq: 1174.7, type: 'sine', dur: 0.4, vol: 0.09, pan: p });
+      tone({ freq: 1567.9, type: 'sine', dur: 0.5, vol: 0.06, delay: 0.06, pan: p });
+    },
+    // хруст расщепления буквы
+    letter(x) {
+      const p = panFor(x);
+      noise({ dur: 0.09, vol: 0.09, hp: 3400 });
+      tone({ freq: 1400, type: 'triangle', dur: 0.12, vol: 0.07, glide: 380, pan: p });
+      tone({ freq: 620, type: 'sine', dur: 0.22, vol: 0.06, glide: 180, delay: 0.03, pan: p });
+    },
+    yes() {
+      const notes = [523.25, 659.25, 783.99, 1046.5, 1318.5];
+      notes.forEach((f, i) => {
+        tone({ freq: f, type: 'triangle', dur: 0.7, vol: 0.14, delay: i * 0.085 });
+        tone({ freq: f * 2, type: 'sine', dur: 0.5, vol: 0.05, delay: i * 0.085 });
+      });
+      noise({ dur: 0.6, vol: 0.05, hp: 4000, delay: 0.1 });
+    },
+    no(x) {
+      const p = panFor(x);
+      tone({ freq: 240, type: 'square', dur: 0.16, vol: 0.09, glide: 620, pan: p });
+      tone({ freq: 620, type: 'sine', dur: 0.14, vol: 0.07, glide: 200, delay: 0.09, pan: p });
+    },
+    tap(x) {
+      tone({ freq: 220 + Math.random() * 60, type: 'sine', dur: 0.18, vol: 0.06, glide: 140, pan: panFor(x) });
+    }
+  };
+})();
+
+/* ============================================================
+   CANVAS 2D
+   ============================================================ */
+const heartCanvas = document.getElementById('heartCanvas');
+const ctx = heartCanvas.getContext('2d');
+const glassCanvas = document.getElementById('glassCanvas');
+
+let W = 0, H = 0, DPR = 1;
+let isMobile = false;
+
+let hearts = [], particles = [], ripples = [], bokeh = [], blobs = [];
 let isInteractive = false;
 let noVisible = true;
+let noButtonRunning = false;
+let lastSpawn = 0;
 
-function resize() {
-  W = canvas.width = glassCanvas.width = window.innerWidth;
-  H = canvas.height = glassCanvas.height = window.innerHeight;
-  if (gl) gl.viewport(0, 0, W, H);
-}
-window.addEventListener('resize', resize);
+const pointer = { x: 0, y: 0, active: false };
 
-let noButtonRunning = false, btnW = 0, btnH = 0;
-
-function moveNoButton() {
-  if (!noButtonRunning) {
-    const rect = btnNo.getBoundingClientRect();
-    btnW = rect.width; btnH = rect.height;
-    btnWrapper.style.width = btnWrapper.offsetWidth + 'px';
-    document.body.appendChild(btnNo);
-    btnNo.style.position = 'fixed';
-    btnNo.style.left = rect.left + 'px';
-    btnNo.style.top = rect.top + 'px';
-    noButtonRunning = true;
-    return;
+class SparkParticle {
+  constructor(x, y, hue) {
+    this.x = x; this.y = y;
+    const a = Math.random() * Math.PI * 2;
+    const s = 1 + Math.random() * 3.4;
+    this.vx = Math.cos(a) * s;
+    this.vy = Math.sin(a) * s;
+    this.life = 1;
+    this.decay = 0.012 + Math.random() * 0.02;
+    this.size = 1.4 + Math.random() * 2.6;
+    this.hue = hue ?? 345;
   }
-  requestAnimationFrame(() => {
-    btnNo.style.transition = 'left 0.3s cubic-bezier(0.25,0.46,0.45,0.94), top 0.3s cubic-bezier(0.25,0.46,0.45,0.94)';
-    const pad = 10;
-    btnNo.style.left = Math.round(pad + Math.random() * Math.max(0, W - btnW - pad)) + 'px';
-    btnNo.style.top = Math.round(pad + Math.random() * Math.max(0, H - btnH - pad)) + 'px';
-  });
+  update() {
+    this.x += this.vx;
+    this.y += this.vy;
+    this.vy += 0.06;
+    this.vx *= 0.985;
+    this.life -= this.decay;
+  }
+  draw() {
+    if (this.life <= 0) return;
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, this.life);
+    ctx.fillStyle = `hsla(${this.hue}, 55%, ${72 + this.life * 15}%, ${0.75 * this.life})`;
+    ctx.shadowColor = `hsla(${this.hue}, 50%, 80%, 0.5)`;
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size * this.life, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
 }
-btnNo.addEventListener('mouseenter', moveNoButton);
-btnNo.addEventListener('touchstart', e => { e.preventDefault(); moveNoButton(); });
-btnNo.addEventListener('click', e => { e.preventDefault(); moveNoButton(); });
 
-// ==================== WebGL Liquid Glass ====================
-const glassCanvas = document.getElementById('glassCanvas');
-let gl, program, bgTex, uRes, uBg;
-let uG1, uG2, uG3, uG4;
-let ready = false;
+class Heart3D {
+  constructor(x, y, sz) {
+    this.x = x ?? Math.random() * W;
+    this.y = y ?? H + Math.random() * 100;
 
-const VS = 'attribute vec2 a_pos; void main(){gl_Position=vec4(a_pos,0,1);}';
+    this.depth = Math.random();
 
-const FS = `
+    const base = isMobile ? 13 : 22;
+    this.size = (sz ?? base + Math.random() * base) * (0.78 + this.depth * 0.45);
+
+    this.vx = (Math.random() - 0.5) * 0.8 * (0.5 + this.depth);
+    this.vy = (-Math.random() * 0.8 - 0.4) * (0.5 + this.depth);
+
+    const pal = [
+      { h: 344, s: 58, l: 66 },
+      { h: 352, s: 66, l: 62 },
+      { h: 336, s: 44, l: 70 },
+      { h:   8, s: 54, l: 69 },
+      { h: 328, s: 38, l: 73 }
+    ];
+    this.c = pal[Math.floor(Math.random() * pal.length)];
+
+    this.alpha = 0.42 + this.depth * 0.42;
+    this.blur = (1 - this.depth) * (isMobile ? 1.2 : 2.6);
+
+    this.rot = (Math.random() - 0.5) * 0.5;
+    this.rotSpeed = (Math.random() - 0.5) * 0.005;
+    this.phase = Math.random() * 6.283;
+    this.pulse = 0.012 + Math.random() * 0.018;
+  }
+
+  update() {
+    this.phase += this.pulse;
+    this.rot += this.rotSpeed;
+    this.x += this.vx + Math.sin(this.phase * 0.4) * 0.18;
+    this.y += this.vy;
+
+    if (pointer.active) {
+      const dx = this.x - pointer.x, dy = this.y - pointer.y;
+      const dist = Math.hypot(dx, dy);
+      const R = isMobile ? 90 : 130;
+      if (dist < R && dist > 0.01) {
+        const f = (1 - dist / R) * 0.55 * (0.4 + this.depth);
+        this.vx += (dx / dist) * f;
+        this.vy += (dy / dist) * f;
+      }
+    }
+    this.vx *= 0.99; this.vy *= 0.99;
+    this.vx = Math.max(-4, Math.min(4, this.vx));
+    this.vy = Math.max(-4, Math.min(4, this.vy));
+
+    if (this.x < -this.size) { this.x = -this.size; this.vx *= -1; }
+    if (this.x > W + this.size) { this.x = W + this.size; this.vx *= -1; }
+    if (this.y < -this.size) { this.y = -this.size; this.vy *= -1; }
+    if (this.y > H + this.size) { this.y = H + this.size; this.vy *= -1; }
+  }
+
+  path(d) {
+    ctx.beginPath();
+    ctx.moveTo(0, -d * 0.26);
+    ctx.bezierCurveTo(-d * 0.52, -d * 0.86, -d * 1.02, -d * 0.10, 0, d * 0.66);
+    ctx.bezierCurveTo(d * 1.02, -d * 0.10, d * 0.52, -d * 0.86, 0, -d * 0.26);
+    ctx.closePath();
+  }
+
+  draw() {
+    const d = this.size;
+    const { h, s, l } = this.c;
+    const p = 1 + Math.sin(this.phase) * 0.03;
+
+    ctx.save();
+    if (this.blur > 0.5) ctx.filter = `blur(${this.blur.toFixed(1)}px)`;
+    ctx.globalAlpha = this.alpha;
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.rot + Math.sin(this.phase * 0.5) * 0.04);
+    ctx.scale(p, 1 / p);
+
+    ctx.shadowColor = `hsla(${h - 10}, 45%, 35%, 0.22)`;
+    ctx.shadowBlur = d * 0.55;
+    ctx.shadowOffsetY = d * 0.14;
+
+    const g = ctx.createLinearGradient(-d * 0.55, -d * 0.7, d * 0.5, d * 0.7);
+    g.addColorStop(0,    `hsl(${h + 4}, ${s - 6}%, ${Math.min(l + 11, 88)}%)`);
+    g.addColorStop(0.55, `hsl(${h}, ${s}%, ${l}%)`);
+    g.addColorStop(1,    `hsl(${h - 8}, ${s - 10}%, ${Math.max(l - 15, 38)}%)`);
+    ctx.fillStyle = g;
+    this.path(d);
+    ctx.fill();
+
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
+
+    ctx.save();
+    this.path(d);
+    ctx.clip();
+    const hg = ctx.createRadialGradient(-d * 0.3, -d * 0.34, 0, -d * 0.3, -d * 0.34, d * 0.85);
+    hg.addColorStop(0,   'rgba(255,255,255,0.30)');
+    hg.addColorStop(0.4, 'rgba(255,255,255,0.09)');
+    hg.addColorStop(1,   'rgba(255,255,255,0)');
+    ctx.fillStyle = hg;
+    ctx.fillRect(-d * 1.2, -d * 1.2, d * 2.4, d * 2.4);
+    ctx.restore();
+
+    ctx.restore();
+    ctx.filter = 'none';
+  }
+
+  isClicked(mx, my) {
+    return Math.hypot(this.x - mx, this.y - my) < this.size * 1.2;
+  }
+
+  split() {
+    const n = 2 + Math.floor(Math.random() * 2), ns = this.size * 0.6;
+    for (let i = 0; i < 12; i++) particles.push(new SparkParticle(this.x, this.y, this.c.h));
+    ripples.push({ x: this.x, y: this.y, r: this.size * 0.5, a: 0.4 });
+    if (ns < (isMobile ? 7 : 5)) return [];
+    const arr = [];
+    for (let i = 0; i < n; i++) {
+      const hrt = new Heart3D(this.x, this.y, ns);
+      hrt.vx = (Math.random() - 0.5) * 2.4;
+      hrt.vy = (Math.random() - 0.5) * 2.4 - 0.5;
+      arr.push(hrt);
+    }
+    return arr;
+  }
+}
+
+function makeScenery() {
+  blobs = [];
+  const colors = [
+    'rgba(255,150,200,0.55)',
+    'rgba(255,205,160,0.45)',
+    'rgba(200,165,255,0.40)',
+    'rgba(255,120,150,0.35)',
+    'rgba(255,245,215,0.50)'
+  ];
+  const n = 4 + Math.floor(Math.random() * 3);
+  for (let i = 0; i < n; i++) {
+    blobs.push({
+      x: Math.random(),
+      y: Math.random(),
+      r: 0.25 + Math.random() * 0.35,
+      c: colors[i % colors.length],
+      sp: 0.00006 + Math.random() * 0.00012,
+      ph: Math.random() * 6.283,
+      ax: 0.06 + Math.random() * 0.1,
+      ay: 0.05 + Math.random() * 0.09
+    });
+  }
+
+  bokeh = [];
+  const bn = 5 + Math.floor(Math.random() * 5);
+  for (let i = 0; i < bn; i++) {
+    const b = new Heart3D(Math.random() * W, Math.random() * H, (isMobile ? 45 : 80) + Math.random() * 70);
+    b.alpha = 0.16 + Math.random() * 0.12;
+    b.blur = isMobile ? 3 : 7;
+    b.vx *= 0.25; b.vy *= 0.25;
+    bokeh.push(b);
+  }
+}
+
+function drawBackground(time) {
+  const s = Math.sin(time * 0.00012), c = Math.cos(time * 0.00009);
+  const g = ctx.createLinearGradient(0, 0, W, H);
+  g.addColorStop(0,   `hsl(${348 + s * 10}, 82%, ${74 + s * 4}%)`);
+  g.addColorStop(0.5, `hsl(${322 + c * 12}, 70%, ${70 + c * 4}%)`);
+  g.addColorStop(1,   `hsl(${12 + s * 8}, 78%, ${76 + c * 3}%)`);
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  for (const b of blobs) {
+    const bx = (b.x + Math.sin(time * b.sp + b.ph) * b.ax) * W;
+    const by = (b.y + Math.cos(time * b.sp * 1.3 + b.ph) * b.ay) * H;
+    const br = b.r * Math.min(W, H);
+    const rg = ctx.createRadialGradient(bx, by, 0, bx, by, br);
+    rg.addColorStop(0, b.c);
+    rg.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = rg;
+    ctx.beginPath();
+    ctx.arc(bx, by, br, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+
+  for (const b of bokeh) { b.update(); b.draw(); }
+
+  const vg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.max(W, H) * 0.78);
+  vg.addColorStop(0, 'rgba(0,0,0,0)');
+  vg.addColorStop(1, 'rgba(190,70,120,0.22)');
+  ctx.fillStyle = vg;
+  ctx.fillRect(0, 0, W, H);
+}
+
+function drawRipples() {
+  for (let i = ripples.length - 1; i >= 0; i--) {
+    const r = ripples[i];
+    r.r += 5.5;
+    r.a -= 0.012;
+    if (r.a <= 0) { ripples.splice(i, 1); continue; }
+    ctx.save();
+    ctx.globalAlpha = r.a;
+    ctx.strokeStyle = 'rgba(255,255,255,0.75)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function spawnHeart(x, y, size, vel) {
+  const h = new Heart3D(x, y, size);
+  if (vel) { h.vx = vel.vx; h.vy = vel.vy; }
+  hearts.push(h);
+  return h;
+}
+
+/* ============================================================
+   WEBGL — liquid glass
+   ============================================================ */
+const VS = 'attribute vec2 a_pos; void main(){ gl_Position = vec4(a_pos, 0.0, 1.0); }';
+
+function buildFS(kernel) {
+  return `
 precision highp float;
 
 uniform vec2 u_res;
@@ -166,349 +652,643 @@ uniform vec4 u_g1;
 uniform vec4 u_g2;
 uniform vec4 u_g3;
 uniform vec4 u_g4;
+uniform float u_dpr;
 
-#define LENS_ZONE   0.32   // ширина линзового кольца, доля min(w,h)
-#define LENS_MAX_PX 56.0   // потолок кольца в пикселях
-#define ABERRATION  3.5    // хроматическая аберрация, px
-#define BLUR_I      2.2    // сила блюра
-#define TINT        0.92   // общая тонировка стекла
-#define SPEC        0.10   // яркость грани
+#define LENS_ZONE 0.45
+#define LENS_MAX_PX 60.0
+#define ABERRATION 4.0
+#define BLUR_I 2.2
+#define TINT 0.92
+#define SPEC 0.10
 
-vec3 getTex(vec2 c){
-  vec2 uv = clamp(c / u_res, vec2(0.0015), vec2(0.9985));
-  return texture2D(u_bg, vec2(uv.x, 1.0 - uv.y)).rgb;
-}
-
-// гауссово ядро 5x5
-vec3 getBlurred(vec2 coord, float r){
-  vec3 col = vec3(0.0);
-  float tw = 0.0;
-  for (int x = -2; x <= 2; x++){
-    for (int y = -2; y <= 2; y++){
-      vec2 o = vec2(float(x), float(y)) * r;
-      float w = exp(-0.5 * float(x*x + y*y) / 2.0);
-      col += getTex(coord + o) * w;
-      tw  += w;
-    }
-  }
-  return col / tw;
-}
-
-float sdf(vec2 p, vec2 b, float r){
+float sdRound(vec2 p, vec2 b, float r) {
   vec2 d = abs(p) - b + vec2(r);
   return min(max(d.x, d.y), 0.0) + length(max(d, 0.0)) - r;
 }
 
-vec2 sdfNormal(vec2 p, vec2 b, float r){
-  vec2 e = vec2(1.0, 0.0);
-  vec2 g = vec2(
-    sdf(p + e.xy, b, r) - sdf(p - e.xy, b, r),
-    sdf(p + e.yx, b, r) - sdf(p - e.yx, b, r)
-  );
-  float l = length(g);
-  return l > 0.0001 ? g / l : vec2(0.0);
+vec3 getTex(vec2 c) {
+  vec2 uv = clamp(c / u_res, vec2(0.0015), vec2(0.9985));
+  return texture2D(u_bg, vec2(uv.x, 1.0 - uv.y)).rgb;
 }
 
-// tintColor / tintAmt — цветное стекло (tintAmt = 0.0 -> обычное прозрачное)
-vec4 glass(vec2 fc, vec4 g, vec3 tintColor, float tintAmt){
+vec3 getBlur(vec2 c, float r) {
+  vec3 sum = vec3(0.0);
+  float wsum = 0.0;
+  for (int x = -${kernel}; x <= ${kernel}; x++) {
+    for (int y = -${kernel}; y <= ${kernel}; y++) {
+      float w = exp(-0.5 * float(x * x + y * y) / 2.0);
+      sum += getTex(c + vec2(float(x), float(y)) * r) * w;
+      wsum += w;
+    }
+  }
+  return sum / wsum;
+}
+
+vec4 glass(vec2 fc, vec4 g, vec3 bgColor, float bgAlpha) {
   vec2 gsz = g.zw;
-  if (gsz.x < 1.0) return vec4(0.0);
+  if (gsz.x < 1.0 || gsz.y < 1.0) return vec4(0.0);
 
-  vec2  gc     = fc - g.xy;
-  vec2  b      = gsz * 0.5;
-  float size   = min(gsz.x, gsz.y);
-  float radius = min(size * 0.5, 34.0);
+  vec2 center = g.xy + gsz * 0.5;
+  vec2 p = fc - center;
+  vec2 hs = gsz * 0.5;
 
-  float d    = sdf(gc, b, radius);
-  float mask = 1.0 - smoothstep(-1.0, 1.0, d);
-  if (mask <= 0.002) return vec4(0.0);
+  float size = min(gsz.x, gsz.y);
+  float radius = min(size * 0.5, 34.0 * u_dpr);
 
-  float depth = max(-d, 0.0);               // расстояние до кромки, px
-  vec2  n     = sdfNormal(gc, b, radius);   // нормаль наружу
+  float d = sdRound(p, hs, radius);
+  float mask = 1.0 - smoothstep(-u_dpr, u_dpr, d);
+  if (mask <= 0.001) return vec4(0.0);
 
-  float band = min(size * LENS_ZONE, LENS_MAX_PX);
-  float t    = clamp(depth / band, 0.0, 1.0);
+  float depth = max(-d, 0.0);
+
+  float e = u_dpr;
+  vec2 grad = vec2(
+    sdRound(p + vec2(e, 0.0), hs, radius) - sdRound(p - vec2(e, 0.0), hs, radius),
+    sdRound(p + vec2(0.0, e), hs, radius) - sdRound(p - vec2(0.0, e), hs, radius)
+  );
+  vec2 n = normalize(grad + vec2(1e-6));
+
+  float band = min(size * LENS_ZONE, LENS_MAX_PX * u_dpr);
+  float t = clamp(depth / band, 0.0, 1.0);
   float distFromCenter = 1.0 - t;
+  float distortion = 1.0 - sqrt(max(0.0, 1.0 - distFromCenter * distFromCenter));
 
-  // профиль линзы 1 - sqrt(1 - x^2)
-  float distortion = 1.0 - sqrt(1.0 - distFromCenter * distFromCenter);
-
-  // смещение наружу, не больше ширины кольца -> ничего не пропадает под кромкой
   vec2 offset = distortion * n * band;
-  vec2 cc     = fc + offset;
+  vec2 cc = fc + offset;
 
-  float blurRadius = BLUR_I * (1.0 - distFromCenter * 0.5);
-  vec2  shift = n * ABERRATION * (0.2 + 0.8 * distFromCenter);
+  float br = BLUR_I * u_dpr * (1.0 - distFromCenter * 0.5);
+  vec2 shift = n * ABERRATION * u_dpr * (0.2 + 0.8 * distFromCenter);
 
   vec3 col = vec3(
-    getBlurred(cc - shift, blurRadius).r,
-    getBlurred(cc,         blurRadius).g,
-    getBlurred(cc + shift, blurRadius).b
+    getBlur(cc - shift, br).r,
+    getBlur(cc, br).g,
+    getBlur(cc + shift, br).b
   );
 
   col *= TINT;
+  col = mix(col, bgColor, bgAlpha);
 
-  // цветное стекло: тон от tintColor, яркость и детали — от фона
-  if (tintAmt > 0.001){
-    float lum = dot(col, vec3(0.299, 0.587, 0.114));
-
-    vec3 tinted = tintColor * (0.22 + 1.10 * lum);   // светимость фона переносится в тон
-    tinted += (col - vec3(lum)) * 0.55;              // часть исходного цвета обратно
-
-    float amt = tintAmt * (0.45 + 0.55 * t);         // у кромки тонировка слабее
-    col = mix(col, tinted, amt);
-  }
-
-  // мягкая грань: свет сверху-слева, лёгкая тень снизу-справа
-  float rim = smoothstep(2.5, 0.0, depth);
-  float ndl = dot(n, normalize(vec2(-0.5, 0.86)));
-  col += rim * pow(max(ndl, 0.0), 1.5) * SPEC * (1.0 + tintAmt);
-  col *= 1.0 - rim * max(-ndl, 0.0) * 0.08;
+  float rim = smoothstep(2.5 * u_dpr, 0.0, depth);
+  float ndl = max(dot(n, normalize(vec2(-0.5, 0.86))), 0.0);
+  col += vec3(SPEC) * rim * ndl * 3.0;
 
   return vec4(col, mask);
 }
 
-void main(){
+void main() {
   vec2 fc = gl_FragCoord.xy;
-  vec3 c  = getTex(fc);
+  vec4 acc = vec4(0.0);
 
-  vec4 s1 = glass(fc, u_g1, vec3(1.0), 0.0);               // карточка 1
-  c = mix(c, s1.rgb, s1.a);
+  vec4 s1 = glass(fc, u_g1, vec3(0.0), 0.0);
+  acc = mix(acc, vec4(s1.rgb, 1.0), s1.a);
 
-  vec4 s2 = glass(fc, u_g2, vec3(1.0), 0.0);               // кнопка "Да"
-  c = mix(c, s2.rgb, s2.a);
+  vec4 s2 = glass(fc, u_g2, vec3(1.0), 0.15);
+  acc = mix(acc, vec4(s2.rgb, 1.0), s2.a);
 
-  vec4 s3 = glass(fc, u_g3, vec3(1.0), 0.0);               // карточка 2
-  c = mix(c, s3.rgb, s3.a);
+  vec4 s3 = glass(fc, u_g3, vec3(0.0), 0.0);
+  acc = mix(acc, vec4(s3.rgb, 1.0), s3.a);
 
-  vec4 s4 = glass(fc, u_g4, vec3(1.0, 0.22, 0.32), 0.50);  // кнопка "Нет" — красное стекло
-  c = mix(c, s4.rgb, s4.a);
+  vec4 s4 = glass(fc, u_g4, vec3(1.0), 0.15);
+  acc = mix(acc, vec4(s4.rgb, 1.0), s4.a);
 
-  gl_FragColor = vec4(c, 1.0);
+  gl_FragColor = acc;
 }
 `;
+}
+
+let gl = null, prog = null, tex = null;
+let uRes, uBg, uG1, uG2, uG3, uG4, uDpr;
+
+function compile(type, src) {
+  const sh = gl.createShader(type);
+  gl.shaderSource(sh, src);
+  gl.compileShader(sh);
+  if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+    console.error(gl.getShaderInfoLog(sh));
+    return null;
+  }
+  return sh;
+}
 
 function initGL() {
-  gl = glassCanvas.getContext('webgl', { alpha: false, antialias: false, premultipliedAlpha: false })
-    || glassCanvas.getContext('experimental-webgl');
-  if (!gl) { console.error('No WebGL'); return; }
+  gl = glassCanvas.getContext('webgl', { alpha: true, premultipliedAlpha: false, antialias: false });
+  if (!gl) return false;
 
-  function mk(type, src) {
-    const s = gl.createShader(type);
-    gl.shaderSource(s, src);
-    gl.compileShader(s);
-    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
-      console.error('Shader compile error:', gl.getShaderInfoLog(s));
-      return null;
-    }
-    return s;
+  const vs = compile(gl.VERTEX_SHADER, VS);
+  const fs = compile(gl.FRAGMENT_SHADER, buildFS(isMobile ? 1 : 2));
+  if (!vs || !fs) return false;
+
+  prog = gl.createProgram();
+  gl.attachShader(prog, vs);
+  gl.attachShader(prog, fs);
+  gl.linkProgram(prog);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+    console.error(gl.getProgramInfoLog(prog));
+    return false;
   }
-
-  const vs = mk(gl.VERTEX_SHADER, VS);
-  const fs = mk(gl.FRAGMENT_SHADER, FS);
-  if (!vs || !fs) return;
-
-  program = gl.createProgram();
-  gl.attachShader(program, vs);
-  gl.attachShader(program, fs);
-  gl.linkProgram(program);
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    console.error('Link error:', gl.getProgramInfoLog(program));
-    return;
-  }
-  gl.useProgram(program);
+  gl.useProgram(prog);
 
   const buf = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,1,1]), gl.STATIC_DRAW);
-  const loc = gl.getAttribLocation(program, 'a_pos');
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+  const loc = gl.getAttribLocation(prog, 'a_pos');
   gl.enableVertexAttribArray(loc);
   gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
 
-  uRes = gl.getUniformLocation(program, 'u_res');
-  uBg  = gl.getUniformLocation(program, 'u_bg');
-  uG1  = gl.getUniformLocation(program, 'u_g1');
-  uG2  = gl.getUniformLocation(program, 'u_g2');
-  uG3  = gl.getUniformLocation(program, 'u_g3');
-  uG4  = gl.getUniformLocation(program, 'u_g4');
-
-  bgTex = gl.createTexture();
-  gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, bgTex);
+  tex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, tex);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
-  ready = true;
+  uRes = gl.getUniformLocation(prog, 'u_res');
+  uBg  = gl.getUniformLocation(prog, 'u_bg');
+  uG1  = gl.getUniformLocation(prog, 'u_g1');
+  uG2  = gl.getUniformLocation(prog, 'u_g2');
+  uG3  = gl.getUniformLocation(prog, 'u_g3');
+  uG4  = gl.getUniformLocation(prog, 'u_g4');
+  uDpr = gl.getUniformLocation(prog, 'u_dpr');
+
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  return true;
 }
 
-function setGlass(loc, rect, visible) {
-  const ok = visible && rect.width > 1 && rect.height > 1;
-  gl.uniform4f(
-    loc,
-    ok ? rect.left + rect.width / 2 : -9999,
-    ok ? H - rect.top - rect.height / 2 : -9999,
-    ok ? rect.width : -1,
-    ok ? rect.height : -1
+function setGlass(loc, el, visible) {
+  if (!gl) return;
+  if (!el || visible === false) { gl.uniform4f(loc, 0, 0, 0, 0); return; }
+  const style = window.getComputedStyle(el);
+  if (style.display === 'none' || style.visibility === 'hidden' || parseFloat(style.opacity) < 0.05) {
+    gl.uniform4f(loc, 0, 0, 0, 0);
+    return;
+  }
+  const r = el.getBoundingClientRect();
+  if (r.width < 1 || r.height < 1) { gl.uniform4f(loc, 0, 0, 0, 0); return; }
+  gl.uniform4f(loc, r.left * DPR, (window.innerHeight - r.bottom) * DPR, r.width * DPR, r.height * DPR);
+}
+
+const card1 = document.getElementById('card1');
+const card2 = document.getElementById('card2');
+const btnYes = document.getElementById('btnYes');
+const btnNo = document.getElementById('btnNo');
+const btnWrapper = document.getElementById('btnWrapper');
+const loveText = document.getElementById('loveText');
+
+function renderGL() {
+  if (!gl) return;
+  gl.viewport(0, 0, glassCanvas.width, glassCanvas.height);
+  gl.clearColor(0, 0, 0, 0);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, heartCanvas);
+
+  gl.uniform2f(uRes, glassCanvas.width, glassCanvas.height);
+  gl.uniform1i(uBg, 0);
+  gl.uniform1f(uDpr, DPR);
+
+  const c1Visible = !card1.classList.contains('fade-out') && window.getComputedStyle(card1).display !== 'none';
+  setGlass(uG1, card1, c1Visible);
+  setGlass(uG2, btnYes, c1Visible);
+  setGlass(uG3, card2, window.getComputedStyle(card2).display !== 'none');
+  setGlass(uG4, btnNo, noVisible);
+
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+}
+
+/* ============================================================
+   ТЕКСТ ПО БУКВАМ + РАСЩЕПЛЕНИЕ
+   ============================================================ */
+const loveMessage = 'Я тебя тоже безумно сильно люблю, Лизочка. Ты самое лучшее, что случалось со мной! Будь всегда рядом. ❤️';
+
+function esc(ch) {
+  if (ch === '<') return '&lt;';
+  if (ch === '>') return '&gt;';
+  if (ch === '&') return '&amp;';
+  return ch;
+}
+
+function wrapLetters(text) {
+  return text.split(' ').map(word => {
+    const inner = word.split('').map(ch => `<span class="letter">${esc(ch)}</span>`).join('');
+    return `<span class="word">${inner}</span>`;
+  }).join(' ');
+}
+
+/* буква разлетается на 5 осколков по случайным линиям разлома */
+function shatterLetter(el) {
+  const r = el.getBoundingClientRect();
+  const cs = window.getComputedStyle(el);
+
+  const clips = [
+    'polygon(0% 0%, 58% 0%, 44% 42%, 0% 55%)',
+    'polygon(58% 0%, 100% 0%, 100% 38%, 44% 42%)',
+    'polygon(0% 55%, 44% 42%, 52% 74%, 0% 100%)',
+    'polygon(44% 42%, 100% 38%, 100% 78%, 52% 74%)',
+    'polygon(0% 100%, 52% 74%, 100% 78%, 100% 100%)'
+  ];
+
+  clips.forEach((clip, i) => {
+    const sh = document.createElement('span');
+    sh.className = 'shard';
+    sh.textContent = el.textContent;
+
+    sh.style.left = r.left + 'px';
+    sh.style.top = r.top + 'px';
+    sh.style.width = r.width + 'px';
+    sh.style.height = r.height + 'px';
+    sh.style.fontSize = cs.fontSize;
+    sh.style.fontFamily = cs.fontFamily;
+    sh.style.fontWeight = cs.fontWeight;
+    sh.style.lineHeight = cs.lineHeight;
+    sh.style.color = '#4e0f2b';
+    sh.style.textShadow = '0 0 12px rgba(255,255,255,0.85), 0 0 24px rgba(255,110,175,0.7)';
+    sh.style.clipPath = clip;
+    sh.style.webkitClipPath = clip;
+
+    document.body.appendChild(sh);
+
+    const ang = (i / clips.length) * Math.PI * 2 + (Math.random() - 0.5) * 0.9;
+    const dist = 55 + Math.random() * 70;
+    const dx = Math.cos(ang) * dist;
+    const dy = Math.sin(ang) * dist * 0.75;
+    const spin = (Math.random() - 0.5) * 320;
+    const dur = 1500 + Math.random() * 500;
+
+    const anim = sh.animate([
+      // трещина: осколки чуть расходятся и замирают
+      { transform: 'translate(0px, 0px) rotate(0deg) scale(1)', opacity: 1, filter: 'blur(0px)', offset: 0 },
+      { transform: `translate(${dx * 0.10}px, ${dy * 0.10}px) rotate(${spin * 0.05}deg) scale(1.14)`, opacity: 1, filter: 'blur(0px)', offset: 0.14 },
+      { transform: `translate(${dx * 0.12}px, ${dy * 0.12}px) rotate(${spin * 0.07}deg) scale(1.10)`, opacity: 1, offset: 0.24 },
+      // разлёт вверх
+      { transform: `translate(${dx * 0.65}px, ${dy * 0.65 - 26}px) rotate(${spin * 0.5}deg) scale(0.95)`, opacity: 0.95, filter: 'blur(0px)', offset: 0.55 },
+      // падение и растворение
+      { transform: `translate(${dx}px, ${dy + 90}px) rotate(${spin}deg) scale(0.4)`, opacity: 0, filter: 'blur(3px)', offset: 1 }
+    ], {
+      duration: dur,
+      delay: i * 45,
+      easing: 'cubic-bezier(.18,.62,.3,1)',
+      fill: 'forwards'
+    });
+
+    anim.onfinish = () => sh.remove();
+    setTimeout(() => sh.remove(), dur + i * 45 + 200);
+  });
+}
+
+loveText.addEventListener('click', e => {
+  const el = e.target;
+  if (!el.classList.contains('letter') || el.classList.contains('gone')) return;
+
+  sfx.unlock();
+  const r = el.getBoundingClientRect();
+  const cx = r.left + r.width / 2;
+  const cy = r.top + r.height / 2;
+
+  sfx.letter(cx);
+  shatterLetter(el);
+  el.classList.add('gone');
+
+  for (let i = 0; i < 12; i++) particles.push(new SparkParticle(cx, cy, 335 + Math.random() * 35));
+  ripples.push({ x: cx, y: cy, r: 4, a: 0.35 });
+  spawnHeart(cx, cy, (isMobile ? 12 : 18) + Math.random() * 10, {
+    vx: (Math.random() - 0.5) * 2.5,
+    vy: -1 - Math.random() * 1.5
+  });
+
+  setTimeout(() => {
+    const rr = el.getBoundingClientRect();
+    const bx = rr.left + rr.width / 2;
+    const by = rr.top + rr.height / 2;
+    const variants = ['back1', 'back2', 'back3', 'back4', 'back5', 'back6'];
+    const v = variants[Math.floor(Math.random() * variants.length)];
+    el.classList.remove('gone');
+    el.classList.add(v);
+    sfx.restore(bx);
+    for (let i = 0; i < 7; i++) particles.push(new SparkParticle(bx, by, 45 + Math.random() * 20));
+    setTimeout(() => el.classList.remove(v), 1050);
+  }, 3400 + Math.random() * 2200);
+});
+
+/* ============================================================
+   КНОПКИ
+   ============================================================ */
+let noPos = null;
+let noLastMove = 0;
+
+function flipMove(el, beforeRect, duration = 420) {
+  const after = el.getBoundingClientRect();
+  const dx = beforeRect.left - after.left;
+  const dy = beforeRect.top - after.top;
+  if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
+  el.animate(
+    [
+      { transform: `translate(${dx}px, ${dy}px)` },
+      { transform: 'translate(0px, 0px)' }
+    ],
+    { duration, easing: 'cubic-bezier(.3,1.15,.4,1)' }
   );
 }
 
-function renderGL() {
-  if (!ready) return;
-  gl.viewport(0, 0, W, H);
-  gl.useProgram(program);
+function detachNoButton() {
+  if (noButtonRunning) return;
 
-  gl.bindTexture(gl.TEXTURE_2D, bgTex);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
-  gl.uniform1i(uBg, 0);
-  gl.uniform2f(uRes, W, H);
+  const r = btnNo.getBoundingClientRect();
+  const yesBefore = btnYes.getBoundingClientRect();
 
-  const c1vis = card1.style.display !== 'none' && !card1.classList.contains('fade-out');
-  const c2vis = card2.classList.contains('fade-in');
+  document.body.appendChild(btnNo);
 
-  setGlass(uG1, card1.getBoundingClientRect(), c1vis);
-  setGlass(uG2, btnYes.getBoundingClientRect(), c1vis);
-  setGlass(uG3, card2.getBoundingClientRect(), c2vis);
-  setGlass(uG4, btnNo.getBoundingClientRect(), noVisible);
+  // стартовая позиция без анимации
+  btnNo.classList.add('instant');
+  btnNo.style.position = 'fixed';
+  btnNo.style.margin = '0';
+  btnNo.style.transform = 'none';
+  btnNo.style.left = r.left + 'px';
+  btnNo.style.top = r.top + 'px';
 
-  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  // принудительный reflow фиксирует стартовое значение для transition
+  void btnNo.offsetWidth;
+  btnNo.classList.remove('instant');
+  void btnNo.offsetWidth;
+
+  // «Да» плавно переезжает в центр освободившегося ряда
+  flipMove(btnYes, yesBefore);
+
+  noPos = { x: r.left, y: r.top };
+  noButtonRunning = true;
+}
+
+function obstacleRects() {
+  const out = [];
+  const push = el => {
+    if (!el) return;
+    const st = window.getComputedStyle(el);
+    if (st.display === 'none' || st.visibility === 'hidden') return;
+    const r = el.getBoundingClientRect();
+    if (r.width > 1 && r.height > 1) out.push(r);
+  };
+  push(card1.style.display === 'none' ? null : card1);
+  push(window.getComputedStyle(card2).display === 'none' ? null : card2);
+  push(document.getElementById('soundToggle'));
+  return out;
+}
+
+function overlapArea(x, y, w, h, rects, gap) {
+  let total = 0;
+  for (const r of rects) {
+    const ox = Math.min(x + w, r.right + gap) - Math.max(x, r.left - gap);
+    const oy = Math.min(y + h, r.bottom + gap) - Math.max(y, r.top - gap);
+    if (ox > 0 && oy > 0) total += ox * oy;
+  }
+  return total;
+}
+
+function moveNoButton(px, py) {
+  const bw = btnNo.offsetWidth;
+  const bh = btnNo.offsetHeight;
+  const pad = 12;
+  const gap = 10;
+
+  const maxX = Math.max(pad, window.innerWidth - bw - pad);
+  const maxY = Math.max(pad, window.innerHeight - bh - pad);
+  const clampX = v => Math.max(pad, Math.min(maxX, v));
+  const clampY = v => Math.max(pad, Math.min(maxY, v));
+
+  const rects = obstacleRects();
+
+  const cur = noPos || { x: pad, y: pad };
+  const curCx = cur.x + bw / 2;
+  const curCy = cur.y + bh / 2;
+
+  const ax = (typeof px === 'number' && isFinite(px)) ? px : curCx;
+  const ay = (typeof py === 'number' && isFinite(py)) ? py : curCy;
+
+  const minD = isMobile ? 55 : 70;
+  const maxD = isMobile ? 95 : 125;
+
+  let best = null, bestScore = -Infinity;
+
+  // сначала ищем рядом, потом при неудаче расширяем кольцо
+  for (let ring = 0; ring < 3; ring++) {
+    const lo = minD + ring * 45;
+    const hi = maxD + ring * 90;
+
+    for (let i = 0; i < 20; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const dist = lo + Math.random() * (hi - lo);
+
+      const rawX = ax + Math.cos(a) * dist - bw / 2;
+      const rawY = ay + Math.sin(a) * dist - bh / 2;
+      const tx = clampX(rawX);
+      const ty = clampY(rawY);
+
+      const clipped = Math.hypot(tx - rawX, ty - rawY);
+      const moved = Math.hypot(tx - cur.x, ty - cur.y);
+      const over = overlapArea(tx, ty, bw, bh, rects, gap);
+
+      if (over === 0 && clipped < 4 && moved >= minD * 0.55) {
+        best = { x: tx, y: ty };
+        bestScore = Infinity;
+        break;
+      }
+
+      const score = -over / 400 - clipped * 2 + Math.min(moved, 160) * 0.5;
+      if (score > bestScore) { bestScore = score; best = { x: tx, y: ty }; }
+    }
+
+    if (bestScore === Infinity) break;
+  }
+
+  noPos = best;
+  btnNo.style.left = noPos.x + 'px';
+  btnNo.style.top = noPos.y + 'px';
+
+  for (let i = 0; i < 9; i++) particles.push(new SparkParticle(curCx, curCy, 350));
+  ripples.push({ x: curCx, y: curCy, r: 6, a: 0.35 });
+  sfx.no(curCx);
+}
+
+function noEscape(e) {
+  e.preventDefault();
+  e.stopPropagation();
+
+  const now = performance.now();
+  if (now - noLastMove < 200) return;
+  noLastMove = now;
+
+  const t = e.touches && e.touches[0];
+  const px = (typeof e.clientX === 'number') ? e.clientX : (t ? t.clientX : undefined);
+  const py = (typeof e.clientY === 'number') ? e.clientY : (t ? t.clientY : undefined);
+
+  detachNoButton();
+  moveNoButton(px, py);
+}
+
+btnNo.addEventListener('click', noEscape);
+btnNo.addEventListener('mouseenter', noEscape);
+btnNo.addEventListener('touchstart', noEscape, { passive: false });
+
+btnYes.addEventListener('click', () => {
+  sfx.unlock();
+  sfx.yes();
+
+  const r = btnYes.getBoundingClientRect();
+  const cx = r.left + r.width / 2;
+  const cy = r.top + r.height / 2;
+
+  for (let i = 0; i < 24; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const s = 3 + Math.random() * 6;
+    spawnHeart(cx, cy, (isMobile ? 12 : 18) + Math.random() * 14, {
+      vx: Math.cos(a) * s,
+      vy: Math.sin(a) * s - 1.5
+    });
+  }
+  for (let i = 0; i < 30; i++) particles.push(new SparkParticle(cx, cy, 340 + Math.random() * 40));
+  ripples.push({ x: cx, y: cy, r: 10, a: 0.6 });
+
+  const yesBefore = btnYes.getBoundingClientRect();
+  noVisible = false;
+  btnNo.style.display = 'none';
+  flipMove(btnYes, yesBefore, 320);
+  
+  card1.classList.remove('floating');
+  card1.classList.add('fade-out');
+
+  setTimeout(() => {
+    card1.style.display = 'none';
+    card2.style.display = 'block';
+    card2.classList.add('fade-in');
+    loveText.innerHTML = wrapLetters(loveMessage);
+    isInteractive = true;
+
+    const n = isMobile ? 10 : 26;
+    for (let i = 0; i < n; i++) spawnHeart();
+
+    setTimeout(() => card2.classList.add('floating'), 1000);
+  }, 600);
+});
+
+/* ============================================================
+   УКАЗАТЕЛЬ И ВЗАИМОДЕЙСТВИЕ
+   ============================================================ */
+function onPointerMove(x, y) {
+  pointer.x = x; pointer.y = y; pointer.active = true;
+  if (Math.random() < 0.22) particles.push(new SparkParticle(x, y, 340 + Math.random() * 40));
+}
+
+window.addEventListener('mousemove', e => onPointerMove(e.clientX, e.clientY));
+window.addEventListener('mouseleave', () => { pointer.active = false; });
+window.addEventListener('touchmove', e => {
+  const t = e.touches[0];
+  if (t) onPointerMove(t.clientX, t.clientY);
+}, { passive: true });
+window.addEventListener('touchend', () => { pointer.active = false; });
+
+function handleInteract(cx, cy) {
+  sfx.unlock();
+  ripples.push({ x: cx, y: cy, r: 6, a: 0.45 });
+  for (let i = 0; i < 6; i++) particles.push(new SparkParticle(cx, cy, 340 + Math.random() * 40));
+
+  if (isInteractive) {
+    for (let i = hearts.length - 1; i >= 0; i--) {
+      if (hearts[i].isClicked(cx, cy)) {
+        const parts = hearts[i].split();
+        sfx.split(cx);
+        hearts.splice(i, 1);
+        hearts.push(...parts);
+        return;
+      }
+    }
+  }
+
+  spawnHeart(cx, cy, undefined, { vx: (Math.random() - 0.5) * 2, vy: -1 - Math.random() });
+  sfx.pop(cx);
+}
+
+heartCanvas.addEventListener('click', e => handleInteract(e.clientX, e.clientY));
+heartCanvas.addEventListener('touchstart', e => {
+  const t = e.touches[0];
+  if (t) handleInteract(t.clientX, t.clientY);
+}, { passive: true });
+
+const soundToggle = document.getElementById('soundToggle');
+soundToggle.addEventListener('click', e => {
+  e.stopPropagation();
+  const m = sfx.toggle();
+  soundToggle.textContent = m ? '🔇' : '🔊';
+  if (!m) sfx.tap(window.innerWidth * 0.9);
+});
+
+// capture: true — чтобы сработать раньше stopPropagation в обработчике кнопки «Нет»
+['pointerdown', 'touchstart', 'keydown'].forEach(ev =>
+  window.addEventListener(ev, () => sfx.arm(), { capture: true, passive: true })
+);
+
+/* ============================================================
+   РЕСАЙЗ И ЦИКЛ
+   ============================================================ */
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth;
+  H = window.innerHeight;
+  isMobile = Math.min(W, H) < 700;
+
+  heartCanvas.width = W * DPR;
+  heartCanvas.height = H * DPR;
+  heartCanvas.style.width = W + 'px';
+  heartCanvas.style.height = H + 'px';
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+  glassCanvas.width = W * DPR;
+  glassCanvas.height = H * DPR;
+  glassCanvas.style.width = W + 'px';
+  glassCanvas.style.height = H + 'px';
+
+  // кнопку «Нет» возвращаем в пределы нового вьюпорта
+  if (noButtonRunning && noPos) {
+    const bw = btnNo.offsetWidth, bh = btnNo.offsetHeight, pad = 12;
+    noPos.x = Math.max(pad, Math.min(W - bw - pad, noPos.x));
+    noPos.y = Math.max(pad, Math.min(H - bh - pad, noPos.y));
+    btnNo.style.left = noPos.x + 'px';
+    btnNo.style.top = noPos.y + 'px';
+  }
+
+  makeScenery();
+}
+
+window.addEventListener('resize', resize);
+
+function animate(time) {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  drawBackground(time);
+
+  if (time - lastSpawn > 2600) {
+    spawnHeart();
+    lastSpawn = time;
+  }
+
+  for (const h of hearts) { h.update(); h.draw(); }
+
+  for (let i = particles.length - 1; i >= 0; i--) {
+    particles[i].update();
+    particles[i].draw();
+    if (particles[i].life <= 0) particles.splice(i, 1);
+  }
+
+  drawRipples();
+  renderGL();
+
+  requestAnimationFrame(animate);
 }
 
 resize();
 initGL();
 
-// ==================== Hearts ====================
-class Heart3D {
-  constructor(x, y, sz) {
-    this.x = x ?? Math.random() * W;
-    this.y = y ?? H + Math.random() * 100;
-    this.size = sz ?? Math.random() * 25 + 20;
-    this.vx = (Math.random() - 0.5) * 0.8;
-    this.vy = -Math.random() * 0.8 - 0.4;
-    const h = [340, 350, 0, 10];
-    this.hue = h[Math.floor(Math.random() * h.length)];
-    this.l = Math.floor(Math.random() * 20) + 55;
-    this.color = `hsl(${this.hue},100%,${this.l}%)`;
-  }
-  update() {
-    this.x += this.vx; this.y += this.vy;
-    if (this.x < -this.size) { this.x = -this.size; this.vx *= -1; }
-    if (this.x > W + this.size) { this.x = W + this.size; this.vx *= -1; }
-    if (this.y < -this.size) { this.y = -this.size; this.vy *= -1; }
-    if (this.y > H + this.size) { this.y = H + this.size; this.vy *= -1; }
-  }
-  draw() {
-    ctx.save(); ctx.translate(this.x, this.y);
-    ctx.fillStyle = this.color;
-    ctx.shadowColor = `hsl(${this.hue},100%,70%)`;
-    ctx.shadowBlur = 12;
-    ctx.beginPath();
-    const d = this.size;
-    ctx.moveTo(0, -d * 0.3);
-    ctx.bezierCurveTo(-d * 0.5, -d * 0.8, -d, -d * 0.2, 0, d * 0.6);
-    ctx.bezierCurveTo(d, -d * 0.2, d * 0.5, -d * 0.8, 0, -d * 0.3);
-    ctx.closePath(); ctx.fill(); ctx.restore();
-  }
-  isClicked(mx, my) {
-    const dx = this.x - mx, dy = this.y - my;
-    return Math.sqrt(dx * dx + dy * dy) < this.size * 1.2;
-  }
-  split() {
-    const n = 3 + Math.floor(Math.random() * 2), ns = this.size * 0.6;
-    for (let i = 0; i < 10; i++) particles.push(new SparkParticle(this.x, this.y, this.hue));
-    if (ns < 5) return [];
-    const arr = [];
-    for (let i = 0; i < n; i++) {
-      const h = new Heart3D(this.x, this.y, ns);
-      h.vx = (Math.random() - 0.5) * 2;
-      h.vy = (Math.random() - 0.5) * 2 - 0.5;
-      arr.push(h);
-    }
-    return arr;
-  }
-}
+for (let i = 0; i < (isMobile ? 8 : 16); i++) spawnHeart();
 
-class SparkParticle {
-  constructor(x, y, hue) {
-    this.x = x; this.y = y;
-    this.vx = (Math.random() - 0.5) * 8;
-    this.vy = (Math.random() - 0.5) * 8;
-    this.life = 1;
-    this.decay = Math.random() * 0.03 + 0.02;
-    this.size = Math.random() * 4 + 2;
-    this.color = `hsl(${hue},100%,70%)`;
-  }
-  update() { this.x += this.vx; this.y += this.vy; this.life -= this.decay; }
-  draw() {
-    ctx.save(); ctx.globalAlpha = Math.max(0, this.life);
-    ctx.fillStyle = this.color;
-    ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-    ctx.fill(); ctx.restore();
-  }
-}
-
-// ==================== Animate ====================
-function animate() {
-  const grad = ctx.createLinearGradient(0, 0, W, H);
-  grad.addColorStop(0, '#ff9a9e'); grad.addColorStop(0.5, '#fecfef'); grad.addColorStop(1, '#feada6');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, W, H);
-
-  for (let i = hearts.length - 1; i >= 0; i--) { hearts[i].update(); hearts[i].draw(); }
-
-  for (let i = 0; i < hearts.length; i++) for (let j = i + 1; j < hearts.length; j++) {
-    const a = hearts[i], b = hearts[j];
-    const dx = b.x - a.x, dy = b.y - a.y;
-    const dist = Math.sqrt(dx * dx + dy * dy), md = a.size + b.size;
-    if (dist < md && dist > 0) {
-      const nx = dx / dist, ny = dy / dist;
-      const dvn = (a.vx - b.vx) * nx + (a.vy - b.vy) * ny;
-      if (dvn > 0) { a.vx -= dvn * nx; a.vy -= dvn * ny; b.vx += dvn * nx; b.vy += dvn * ny; }
-      const o = md - dist;
-      a.x -= nx * o / 2; a.y -= ny * o / 2;
-      b.x += nx * o / 2; b.y += ny * o / 2;
-    }
-  }
-
-  for (let i = particles.length - 1; i >= 0; i--) {
-    particles[i].update(); particles[i].draw();
-    if (particles[i].life <= 0) particles.splice(i, 1);
-  }
-
-  renderGL();
-  requestAnimationFrame(animate);
-}
-animate();
-
-function handleInteract(cx, cy) {
-  if (!isInteractive) return;
-  for (let i = hearts.length - 1; i >= 0; i--) {
-    if (hearts[i].isClicked(cx, cy)) {
-      const s = hearts[i].split();
-      hearts.splice(i, 1);
-      hearts.push(...s);
-      break;
-    }
-  }
-}
-window.addEventListener('click', e => handleInteract(e.clientX, e.clientY));
-window.addEventListener('touchstart', e => { if (isInteractive && e.touches.length > 0) handleInteract(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
-
-btnYes.addEventListener('click', () => {
-  card1.classList.add('fade-out');
-  btnNo.style.opacity = '0';
-  btnNo.style.pointerEvents = 'none';
-  noVisible = false;
-  setTimeout(() => {
-    card1.style.display = 'none';
-    card2.classList.add('fade-in');
-    wrapLetters(loveMessage);
-    canvas.style.pointerEvents = 'auto';
-    isInteractive = true;
-    for (let i = 0; i < 50; i++) hearts.push(new Heart3D(Math.random() * W, Math.random() * H, Math.random() * 15 + 15));
-  }, 600);
-});
+requestAnimationFrame(animate);
 </script>
 </body>
 </html>
