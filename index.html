@@ -163,7 +163,16 @@
     55%  { transform: translateY(-5px) scaleY(1.12) scaleX(0.94); opacity: 1; }
     100% { transform: translateY(0) scaleY(1) scaleX(1); opacity: 1; }
   }
+  .accent-word { color: #d81b4a; }
 
+  .love-text .word.accent .letter { color: #d81b4a; }
+  .love-text .word.accent .letter.hot {
+    color: #ff2d62;
+    text-shadow:
+      0 0 8px rgba(255,255,255,0.95),
+      0 0 18px rgba(255,90,140,0.95),
+      0 0 30px rgba(255,40,90,0.7);
+  }
   .shard {
     position: fixed;
     z-index: 150;
@@ -206,7 +215,7 @@
 
 <div class="stage">
   <div class="card floating" id="card1">
-    <div class="title">Люблю тебя<br>А ты?</div>
+    <div class="title">Люблю тебя<br>А <span class="accent-word">ты</span>?</div>
     <div class="buttons-container" id="btnWrapper">
       <button class="btn btn-yes" id="btnYes">Да</button>
       <button class="btn btn-no" id="btnNo">Нет</button>
@@ -1008,10 +1017,14 @@ function esc(ch) {
   return ch;
 }
 
+const ACCENT_WORDS = ['Лизочка'];
+
 function wrapLetters(text) {
   return text.split(' ').map(word => {
+    const bare = word.replace(/[^\p{L}]/gu, '').toLowerCase();
+    const accent = ACCENT_WORDS.includes(bare) ? ' accent' : '';
     const inner = word.split('').map(ch => `<span class="letter">${esc(ch)}</span>`).join('');
-    return `<span class="word">${inner}</span>`;
+    return `<span class="word${accent}">${inner}</span>`;
   }).join(' ');
 }
 
@@ -1068,7 +1081,7 @@ function shatterLetter(el) {
     sh.style.fontFamily = cs.fontFamily;
     sh.style.fontWeight = cs.fontWeight;
     sh.style.lineHeight = cs.lineHeight;
-    sh.style.color = '#4e0f2b';
+    sh.style.color = cs.color;
     sh.style.textShadow = '0 0 12px rgba(255,255,255,0.85), 0 0 24px rgba(255,110,175,0.7)';
     sh.style.clipPath = clip;
     sh.style.webkitClipPath = clip;
@@ -1383,11 +1396,25 @@ function handleInteract(cx, cy) {
   sfx.pop(cx);
 }
 
-heartCanvas.addEventListener('click', e => handleInteract(e.clientX, e.clientY));
-heartCanvas.addEventListener('touchstart', e => {
-  const t = e.touches[0];
-  if (t) handleInteract(t.clientX, t.clientY);
-}, { passive: true });
+if (window.PointerEvent) {
+  heartCanvas.addEventListener('pointerdown', e => {
+    if (!e.isPrimary) return;              // игнорируем второй и последующие пальцы
+    handleInteract(e.clientX, e.clientY);
+  });
+} else {
+  // запасной путь для очень старых браузеров без Pointer Events
+  let touchedAt = 0;
+  heartCanvas.addEventListener('touchstart', e => {
+    const t = e.touches[0];
+    if (!t) return;
+    touchedAt = performance.now();
+    handleInteract(t.clientX, t.clientY);
+  }, { passive: true });
+  heartCanvas.addEventListener('click', e => {
+    if (performance.now() - touchedAt < 700) return;   // это эмулированный клик после тапа
+    handleInteract(e.clientX, e.clientY);
+  });
+}
 
 
 ['pointerdown', 'touchstart', 'keydown'].forEach(ev =>
