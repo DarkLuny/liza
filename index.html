@@ -31,7 +31,8 @@
   canvas { position: fixed; inset: 0; display: block; }
   #heartCanvas { z-index: 1; }
   #glassCanvas { z-index: 2; pointer-events: none; }
-
+  /* пока открыта игра, стекло рисуется поверх игрового канваса */
+  #glassCanvas.lifted { z-index: 5; }
   .stage {
     position: relative; z-index: 3;
     width: 100%; height: 100%;
@@ -196,133 +197,197 @@
     to   { opacity: 1; transform: scale(1) translateY(0); }
   }
 
-  #soundToggle {
-    position: fixed;
-    top: 14px; right: 14px; z-index: 200;
-    width: 42px; height: 42px;
-    border: 1px solid rgba(255,255,255,0.4);
-    border-radius: 50%;
-    background: rgba(255,255,255,0.18);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    font-size: 1.1rem;
-    line-height: 1;
-    cursor: pointer;
-    color: #4e0f2b;
-    transition: transform 0.18s ease, background 0.2s ease;
-  }
-  #soundToggle:hover  { transform: scale(1.1); background: rgba(255,255,255,0.3); }
-  #soundToggle:active { transform: scale(0.92); }
   /* ---------- игра ---------- */
-  #gameCanvas { z-index: 4; pointer-events: none; }
-  #gameCanvas.on { pointer-events: auto; }
+#gameCanvas { z-index: 4; pointer-events: none; }
+#gameCanvas.on { pointer-events: auto; }
 
-  #gameLayer { position: fixed; inset: 0; z-index: 5; display: none; pointer-events: none; }
-  #gameLayer.on { display: flex; flex-direction: column; align-items: center; }
+#gameLayer {
+  position: fixed;
+  left: 0; top: 0;
+  width: 100%;
+  height: var(--app-h, 100%);
+  z-index: 6;
+  display: none;
+  pointer-events: none;
+}
+#gameLayer.on { display: block; }
 
-  #gameHud {
-    flex: 0 0 auto;
-    width: 100%;
-    padding-top: calc(10px + env(safe-area-inset-top, 0px));
-    text-align: center;
-    color: #4e0f2b;
-    text-shadow: 0 2px 12px rgba(255,255,255,0.75);
-  }
-  #gameScore {
-    font-size: clamp(1.6rem, 7vmin, 3.2rem);
-    font-weight: 800;
-    line-height: 1.05;
-  }
-  #gameBest {
-    font-size: clamp(0.68rem, 2.4vmin, 0.85rem);
-    font-weight: 700;
-    opacity: 0.7;
-    margin-top: 2px;
-  }
+#gameHud {
+  position: absolute;
+  left: 0; right: 0;
+  top: calc(10px + env(safe-area-inset-top, 0px));
+  text-align: center;
+  color: #4e0f2b;
+  text-shadow: 0 2px 12px rgba(255,255,255,0.75);
+}
+#gameScore {
+  font-size: clamp(1.6rem, 7vmin, 3.2rem);
+  font-weight: 800;
+  line-height: 1.05;
+}
+#gameBest {
+  font-size: clamp(0.68rem, 2.4vmin, 0.85rem);
+  font-weight: 700;
+  opacity: 0.7;
+  margin-top: 2px;
+}
 
-  .game-panel {
-    position: static;
-    transform: none;
-    margin: auto;
-    width: min(360px, 88vw);
-    max-height: calc(100% - 24px);
-    overflow-y: auto;
-    padding: clamp(16px, 4.2vmin, 26px) clamp(14px, 3.6vmin, 22px);
-    border-radius: clamp(20px, 5vmin, 30px);
-    text-align: center;
-    pointer-events: auto;
-    color: #4e0f2b;
-    background: rgba(255,255,255,0.16);
-    border: 1px solid rgba(255,255,255,0.42);
-    backdrop-filter: blur(14px) saturate(150%);
-    -webkit-backdrop-filter: blur(14px) saturate(150%);
-    box-shadow: 0 18px 50px rgba(150,30,80,0.22), inset 0 1px 0 rgba(255,255,255,0.5);
-    animation: smoothAppear 0.45s ease forwards;
-  }
-  .game-panel.hidden { display: none; }
-  .game-title {
-    font-size: clamp(1rem, 4.4vmin, 1.6rem);
-    font-weight: 800;
-    margin-bottom: clamp(6px, 1.6vmin, 10px);
-  }
-  .game-sub {
-    font-size: clamp(0.8rem, 3vmin, 0.95rem);
-    font-weight: 600;
-    line-height: 1.5;
-    opacity: 0.88;
-    margin-bottom: clamp(12px, 3vmin, 20px);
-  }
-  .game-actions { display: flex; gap: clamp(8px, 2vmin, 10px); justify-content: center; flex-wrap: wrap; }
-  .game-btn {
-    font-family: inherit;
-    font-size: clamp(0.85rem, 3.2vmin, 1rem);
-    font-weight: 700;
-    padding: clamp(9px, 2.4vmin, 12px) clamp(16px, 5vmin, 24px);
-    border-radius: 999px;
-    cursor: pointer;
-    color: #4e0f2b;
-    border: 1px solid rgba(255,255,255,0.5);
-    background: rgba(255,255,255,0.28);
-    transition: transform 0.16s cubic-bezier(.34,1.56,.64,1), background 0.2s ease;
-  }
-  .game-btn:hover  { transform: scale(1.06); background: rgba(255,255,255,0.42); }
-  .game-btn:active { transform: scale(0.95); }
-  .game-btn.ghost  { background: rgba(255,255,255,0.12); }
+/* панель: форму и стекло рисует шейдер, CSS задаёт только раскладку и текст */
+.game-panel {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(360px, 88vw);
+  max-height: calc(var(--app-h, 100%) - 28px);
+  overflow-y: auto;
+  padding: clamp(18px, 4.4vmin, 26px) clamp(16px, 4vmin, 22px);
+  border-radius: 34px;
+  text-align: center;
+  pointer-events: auto;
+  color: #4e0f2b;
+  background: none;
+  border: none;
+  box-shadow: none;
+  animation: panelAppear 0.45s ease forwards;
+}
+@keyframes panelAppear {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.9) translateY(20px); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1) translateY(0); }
+}
+.game-panel.hidden { display: none; }
 
-  /* низкие экраны: телефон в горизонтальной ориентации */
-  @media (max-height: 480px) {
-    #gameHud { padding-top: 4px; }
-    #gameScore { font-size: clamp(1.2rem, 8vh, 1.8rem); }
-    #gameBest { display: none; }
-    .game-panel { width: min(440px, 92vw); padding: 12px 16px; }
-    .game-sub { margin-bottom: 10px; line-height: 1.35; }
-    .game-actions { flex-wrap: nowrap; }
-  }
+.game-title {
+  font-size: clamp(1.05rem, 4.6vmin, 1.6rem);
+  font-weight: 800;
+  line-height: 1.25;
+  margin-bottom: clamp(5px, 1.4vmin, 8px);
+  text-shadow: 0 1px 0 rgba(255,255,255,0.5);
+}
+.game-sub {
+  font-size: clamp(0.8rem, 3vmin, 0.95rem);
+  font-weight: 600;
+  line-height: 1.45;
+  opacity: 0.9;
+  margin-bottom: clamp(14px, 3.4vmin, 20px);
+  text-shadow: 0 1px 0 rgba(255,255,255,0.45);
+}
 
-  .game-hidden { opacity: 0 !important; pointer-events: none !important; transition: opacity 0.35s ease; }
+/* список режимов */
+.game-modes {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(12px, 2.8vmin, 16px);
+  margin-bottom: clamp(16px, 3.6vmin, 22px);
+}
+.game-modes.hidden { display: none; }
 
-  #comboBadge {
-    position: fixed;
-    z-index: 6;
-    left: 50%;
-    bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-    transform: translateX(-50%) scale(0.82);
-    max-width: 80vw;
-    padding: clamp(6px, 1.8vmin, 8px) clamp(12px, 4vmin, 18px);
-    border-radius: 999px;
-    font-weight: 800;
-    font-size: clamp(0.8rem, 3vmin, 0.95rem);
-    white-space: nowrap;
-    color: #4e0f2b;
-    background: rgba(255,255,255,0.22);
-    border: 1px solid rgba(255,255,255,0.45);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.25s ease, transform 0.25s cubic-bezier(.34,1.56,.64,1);
-  }
-  #comboBadge.on { opacity: 1; transform: translateX(-50%) scale(1); }
+.game-mode {
+  display: flex;
+  align-items: center;
+  gap: clamp(11px, 2.8vmin, 15px);
+  width: 100%;
+  min-height: clamp(56px, 13vmin, 70px);
+  padding: clamp(10px, 2.6vmin, 14px) clamp(14px, 3.4vmin, 18px);
+  border-radius: 22px;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  color: #4e0f2b;
+  background: none;
+  border: none;
+  box-shadow: none;
+  -webkit-appearance: none;
+  appearance: none;
+  opacity: 0.84;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.55);
+  transition: opacity 0.2s ease, transform 0.16s cubic-bezier(.34,1.56,.64,1);
+}
+.game-mode:focus { outline: none; }
+.game-mode:active { transform: scale(0.97); }
+.game-mode.sel { opacity: 1; }
+.game-mode.sel .game-mode-txt b { text-shadow: 0 0 10px rgba(255,255,255,0.9); }
+
+.game-mode-ico { font-size: clamp(1.3rem, 4.8vmin, 1.7rem); line-height: 1; flex: 0 0 auto; }
+.game-mode-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.game-mode-txt b { font-size: clamp(0.92rem, 3.4vmin, 1.05rem); font-weight: 800; }
+.game-mode-txt i {
+  font-style: normal;
+  font-size: clamp(0.7rem, 2.6vmin, 0.82rem);
+  font-weight: 600;
+  opacity: 0.78;
+  line-height: 1.3;
+}
+
+/* кнопки действий */
+.game-actions {
+  display: flex;
+  gap: clamp(12px, 3vmin, 16px);
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.game-btn {
+  font-family: inherit;
+  font-size: clamp(0.9rem, 3.4vmin, 1.05rem);
+  font-weight: 700;
+  min-height: clamp(44px, 10vmin, 52px);
+  min-width: clamp(104px, 26vmin, 132px);
+  padding: 0 clamp(18px, 5vmin, 26px);
+  border-radius: 999px;
+  cursor: pointer;
+  color: #4e0f2b;
+  background: none;
+  border: none;
+  box-shadow: none;
+  -webkit-appearance: none;
+  appearance: none;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.55);
+  transition: transform 0.16s cubic-bezier(.34,1.56,.64,1);
+}
+.game-btn:focus { outline: none; }
+.game-btn:hover  { transform: scale(1.05); }
+.game-btn:active { transform: scale(0.95); }
+.game-btn.ghost  { opacity: 0.88; }
+
+/* низкие экраны: телефон в горизонтальной ориентации */
+@media (max-height: 480px) {
+  #gameHud { top: 4px; }
+  #gameScore { font-size: clamp(1.2rem, 8vh, 1.8rem); }
+  #gameBest { display: none; }
+  .game-panel { width: min(460px, 94vw); padding: 12px 16px; }
+  .game-sub { margin-bottom: 10px; line-height: 1.3; }
+  .game-modes { gap: 8px; margin-bottom: 10px; }
+  .game-mode { min-height: 42px; padding: 6px 12px; border-radius: 16px; }
+  .game-mode-txt i { display: none; }
+  .game-actions { flex-wrap: nowrap; gap: 10px; }
+  .game-btn { min-height: 38px; min-width: 92px; }
+}
+
+.game-hidden { opacity: 0 !important; pointer-events: none !important; transition: opacity 0.35s ease; }
+
+#comboBadge {
+  position: fixed;
+  z-index: 7;
+  left: 50%;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%) scale(0.82);
+  max-width: 80vw;
+  padding: clamp(6px, 1.8vmin, 8px) clamp(12px, 4vmin, 18px);
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: clamp(0.8rem, 3vmin, 0.95rem);
+  white-space: nowrap;
+  color: #4e0f2b;
+  background: rgba(255,255,255,0.22);
+  border: 1px solid rgba(255,255,255,0.45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s cubic-bezier(.34,1.56,.64,1);
+}
+#comboBadge.on { opacity: 1; transform: translateX(-50%) scale(1); }
 </style>
 </head>
 <body>
@@ -339,6 +404,29 @@
   <div class="game-panel" id="gamePanel">
     <div class="game-title" id="gameTitle">Секретный уровень 💗</div>
     <div class="game-sub" id="gameSub"></div>
+    <div class="game-modes" id="gameModes">
+      <button class="game-mode sel" id="modeFly">
+        <span class="game-mode-ico">🕊️</span>
+        <span class="game-mode-txt">
+          <b>Полёт</b>
+          <i>Между стеклянными колоннами</i>
+        </span>
+      </button>
+      <button class="game-mode" id="modeRun">
+        <span class="game-mode-ico">🏃‍♀️</span>
+        <span class="game-mode-txt">
+          <b>Забег</b>
+          <i>Прыжки и подкаты через кристаллы</i>
+        </span>
+      </button>
+      <button class="game-mode" id="modeTet">
+        <span class="game-mode-ico">🧩</span>
+        <span class="game-mode-txt">
+          <b>Тетрис</b>
+          <i>Стеклянные фигуры и растущие уровни</i>
+        </span>
+      </button>
+    </div>
     <div class="game-actions">
       <button class="game-btn" id="gamePlay">Полетели</button>
       <button class="game-btn ghost" id="gameExit">Выйти</button>
@@ -1044,6 +1132,11 @@ const btnYes = document.getElementById('btnYes');
 const btnNo = document.getElementById('btnNo');
 const btnWrapper = document.getElementById('btnWrapper');
 const loveText = document.getElementById('loveText');
+const gameCanvasEl = document.getElementById('gameCanvas');
+const gamePanelEl  = document.getElementById('gamePanel');
+const gamePlayEl   = document.getElementById('gamePlay');
+const gameExitEl   = document.getElementById('gameExit');
+const gameModeEls  = Array.prototype.slice.call(document.querySelectorAll('.game-mode'));
 
 let card1Visible = true;
 let card2Visible = false;
@@ -1076,7 +1169,7 @@ function regionFor(rects) {
   return { x: x0, y: y0, w, h };
 }
 
-function runPass(pass, region, g1, g2, g3, g4) {
+function runPass(pass, region, g1, g2, g3, g4, withGame) {
   const dw = Math.round(region.w * DPR);
   const dh = Math.round(region.h * DPR);
   if (dw < 2 || dh < 2) return;
@@ -1093,7 +1186,13 @@ function runPass(pass, region, g1, g2, g3, g4) {
     Math.round(region.x * DPR), Math.round(region.y * DPR), dw, dh,
     0, 0, dw, dh
   );
-
+  if (withGame) {
+    pass.c2d.drawImage(
+      gameCanvasEl,
+      Math.round(region.x * DPR), Math.round(region.y * DPR), dw, dh,
+      0, 0, dw, dh
+    );
+  }
   gl.bindTexture(gl.TEXTURE_2D, pass.tex);
   if (!pass.alloc) {
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, pass.cv);
@@ -1116,12 +1215,46 @@ function runPass(pass, region, g1, g2, g3, g4) {
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 }
 
+function clearGlass() {
+  if (!gl) return;
+  gl.disable(gl.SCISSOR_TEST);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+}
+
 function renderGL() {
   if (!gl) return;
 
   gl.disable(gl.SCISSOR_TEST);
   gl.clear(gl.COLOR_BUFFER_BIT);
   gl.enable(gl.SCISSOR_TEST);
+
+  // открыта игра → стекло только для панели выбора, и только когда она видна
+  if (game.open) {
+    if (!game.playing && !gamePanelEl.classList.contains('hidden')) {
+      const rp = rectOf(gamePanelEl, true);
+      if (rp) {
+        const reg = regionFor([rp]);
+        const rPlay = rectOf(gamePlayEl, true);
+        const rExit = rectOf(gameExitEl, true);
+        runPass(passCards, reg, rp, rPlay, rExit, null, true);
+
+        let rSel = null;
+        const others = [];
+        for (let i = 0; i < gameModeEls.length; i++) {
+          const el = gameModeEls[i];
+          if (el.offsetParent === null) continue;         // список скрыт
+          const r = rectOf(el, true);
+          if (!r) continue;
+          if (el.classList.contains('sel')) rSel = r; else others.push(r);
+        }
+        if (rSel || others.length) {
+          runPass(passNo, reg, others[0] || null, rSel, others[1] || null, null, true);
+        }
+      }
+    }
+    gl.disable(gl.SCISSOR_TEST);
+    return;
+  }
 
   const r1 = rectOf(card1, card1Visible);
   const r2 = rectOf(btnYes, card1Visible);
@@ -1584,141 +1717,85 @@ function registerPop() {
   showCombo(popStreak.length);
 }
 
-/* ============================================================
-   FLAPPY HEART — процедурная карта в стиле сайта
-   ============================================================ */
+/* ======================= ИГРЫ ======================= */
 const game = (() => {
-  const cv = document.getElementById('gameCanvas');
-  const g = cv.getContext('2d');
-  const layer = document.getElementById('gameLayer');
-  const panel = document.getElementById('gamePanel');
+  /* ---------- элементы ---------- */
+  const cv      = document.getElementById('gameCanvas');
+  const g       = cv.getContext('2d');
+  const layer   = document.getElementById('gameLayer');
+  const panel   = document.getElementById('gamePanel');
   const titleEl = document.getElementById('gameTitle');
-  const subEl = document.getElementById('gameSub');
+  const subEl   = document.getElementById('gameSub');
   const scoreEl = document.getElementById('gameScore');
-  const bestEl = document.getElementById('gameBest');
+  const bestEl  = document.getElementById('gameBest');
   const playBtn = document.getElementById('gamePlay');
   const exitBtn = document.getElementById('gameExit');
+  const modesEl = document.querySelector('.game-modes');
+  const modeBtn = {
+    fly: document.getElementById('modeFly'),
+    run: document.getElementById('modeRun'),
+    tet: document.getElementById('modeTet')
+  };
+  const hideEls = [
+    document.getElementById('card1'),
+    document.getElementById('card2'),
+    document.querySelector('.btn-no')
+  ].filter(Boolean);
 
+  /* ---------- общее состояние ---------- */
   let open = false, playing = false, dead = false;
-  let bird = null, cols = [], score = 0, best = 0;
-  let walk = 0, seed = 7, shake = 0;
-  let savedCard1 = false, savedCard2 = false, savedNo = false;
+  let mode = 'fly', score = 0, shake = 0, seed = 1;
 
-  try { best = parseInt(localStorage.getItem('flappyHeartBest') || '0', 10) || 0; } catch (e) {}
+  const BEST_KEY = { fly:'flappyHeartBest', run:'runHeartBest', tet:'tetHeartBest' };
+  const best = { fly:0, run:0, tet:0 };
+  for (const k in BEST_KEY) best[k] = +(localStorage.getItem(BEST_KEY[k]) || 0) || 0;
 
-  const GRAV = 0.0026;
-  const FLAP = -0.72;
+  const HINT = {
+    fly: 'Тапай или пробел — взлёт',
+    run: 'Тапай или пробел — прыжок',
+    tet: 'Свайп — сдвиг, тап — поворот, свайп вниз — сброс'
+  };
+  const PLAY_LABEL = { fly:'Полетели', run:'Побежали', tet:'Начать' };
+  const TITLE = { fly:'Полёт сердца', run:'Забег', tet:'Тетрис' };
 
-  // масштаб от меньшей стороны: на узком экране колонны не расползаются
   const S = () => Math.min(1.35, Math.max(0.58, Math.min(H, W * 1.1) / 780));
+  const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+  const reseed = () => { seed = ((Date.now() ^ 0x9e3779b9) >>> 0) % 4294967296 || 1; };
+  const rr = (a, b) => a + rnd() * (b - a);
+  const beep = n => { try { if (typeof sfx !== 'undefined' && sfx && typeof sfx[n] === 'function') sfx[n](); } catch (e) {} };
+  const spark = (x, y, h) => { try { if (typeof addSpark === 'function') addSpark(x, y, h); } catch (e) {} };
 
-  // детерминированный ГПСЧ — карта генерируется на ходу, seed новый на каждый забег
-  function rnd() {
-    seed = (seed * 1664525 + 1013904223) % 4294967296;
-    return seed / 4294967296;
+  function glassGrad(x0, y0, x1, y1) {
+    const gr = g.createLinearGradient(x0, y0, x1, y1);
+    gr.addColorStop(0,   'rgba(255,255,255,0.50)');
+    gr.addColorStop(0.45,'rgba(255,196,220,0.40)');
+    gr.addColorStop(1,   'rgba(212,58,118,0.38)');
+    return gr;
   }
 
-  function addColumn(x) {
-    const s = S();
-    const w = (isMobile ? 62 : 78) * s;
-    const gapMin = (isMobile ? 138 : 152) * s;
-    const gapH = Math.max(gapMin, (isMobile ? 210 : 235) * s - score * 3.0 * s);
-    const margin = 64 * s;
-    const lo = margin + gapH / 2;
-    const hi = H - margin - gapH / 2;
-
-    // случайное блуждание центра прохода: карта плавная, но непредсказуемая
-    walk += (rnd() - 0.5) * 280 * s;
-    if (walk < lo) walk = lo + (lo - walk) * 0.5;
-    if (walk > hi) walk = hi - (walk - hi) * 0.5;
-    walk = Math.max(lo, Math.min(hi, walk));
-
-    const moving = score > 7 && rnd() < 0.32;
-    cols.push({
-      x, w, gapY: walk, gapH,
-      amp: moving ? (26 + rnd() * 42) * s : 0,
-      sp: 0.0008 + rnd() * 0.0009,
-      ph: rnd() * 6.283,
-      passed: false,
-      coin: rnd() < 0.55,
-      coinGot: false
-    });
-  }
-
-  const gapCenter = (c, time) => c.amp ? c.gapY + Math.sin(time * c.sp + c.ph) * c.amp : c.gapY;
-
-  function rr(x, y, w, h, r) {
-    const k = Math.min(r, w / 2, h / 2);
+  function heartPath(x, y, size, rot) {
+    g.save();
+    g.translate(x, y);
+    if (rot) g.rotate(rot);
+    g.scale(size / 32, size / 32);
     g.beginPath();
-    g.moveTo(x + k, y);
-    g.lineTo(x + w - k, y);
-    g.quadraticCurveTo(x + w, y, x + w, y + k);
-    g.lineTo(x + w, y + h - k);
-    g.quadraticCurveTo(x + w, y + h, x + w - k, y + h);
-    g.lineTo(x + k, y + h);
-    g.quadraticCurveTo(x, y + h, x, y + h - k);
-    g.lineTo(x, y + k);
-    g.quadraticCurveTo(x, y, x + k, y);
+    g.moveTo(0, 11);
+    g.bezierCurveTo(-15, -2, -16, -14, -8, -16);
+    g.bezierCurveTo(-3, -17, 0, -13, 0, -10);
+    g.bezierCurveTo(0, -13, 3, -17, 8, -16);
+    g.bezierCurveTo(16, -14, 15, -2, 0, 11);
     g.closePath();
   }
 
-  function drawCol(c, gy, s) {
-    if (c.x > W + 40 || c.x + c.w < -40) return;
-    const topH = gy - c.gapH / 2;
-    const botY = gy + c.gapH / 2;
-
-    const grad = g.createLinearGradient(c.x, 0, c.x + c.w, 0);
-    grad.addColorStop(0,    'rgba(255,255,255,0.46)');
-    grad.addColorStop(0.35, 'rgba(255,196,220,0.34)');
-    grad.addColorStop(1,    'rgba(212,58,118,0.30)');
-    g.fillStyle = grad;
-    g.strokeStyle = 'rgba(255,255,255,0.6)';
-    g.lineWidth = 1.4;
-
-    const r = 16 * s;
-    rr(c.x, -60, c.w, topH + 60, r); g.fill(); g.stroke();
-    rr(c.x, botY, c.w, H - botY + 60, r); g.fill(); g.stroke();
-
-    // «губы» у самого проёма — как у труб в оригинале, но стеклянные
-    const lipH = 15 * s, over = 7 * s;
-    g.fillStyle = 'rgba(255,255,255,0.5)';
-    rr(c.x - over, topH - lipH, c.w + over * 2, lipH, 9 * s); g.fill(); g.stroke();
-    rr(c.x - over, botY, c.w + over * 2, lipH, 9 * s); g.fill(); g.stroke();
-
-    // вертикальный блик
-    g.fillStyle = 'rgba(255,255,255,0.32)';
-    g.fillRect(c.x + 4 * s, -60, 2.4 * s, topH + 60 - lipH);
-    g.fillRect(c.x + 4 * s, botY + lipH, 2.4 * s, H - botY);
-  }
-
-  function drawCoin(c, gy, time, s) {
-    if (!c.coin || c.coinGot || c.x > W + 40 || c.x + c.w < -40) return;
-    const size = 20 * s;
-    const sp = heartSprite(3, size, 0);
-    const p = 1 + Math.sin(time * 0.006 + c.ph) * 0.13;
-    g.save();
-    g.globalAlpha = 0.95;
-    g.translate(c.x + c.w / 2, gy);
-    g.rotate(Math.sin(time * 0.003 + c.ph) * 0.28);
-    const k = (size / sp.d) * p;
-    g.scale(k, k);
-    g.drawImage(sp.cv, -sp.half, -sp.half);
-    g.restore();
-  }
-
-  function drawBird(time, s) {
-    const size = 34 * s;
-    const sp = heartSprite(1, size, 0);
-    const ft = Math.min(1, (time - bird.lastFlap) / 260);
-    const squash = 1 + (1 - ft) * 0.2;
-    g.save();
-    g.translate(bird.x, bird.y);
-    g.rotate(bird.rot);
-    const k = size / sp.d;
-    g.scale(k * squash, k / squash);
-    g.shadowColor = 'rgba(190,30,80,0.4)';
-    g.shadowBlur = 22;
-    g.drawImage(sp.cv, -sp.half, -sp.half);
+  function heartAt(x, y, size, rot, alpha) {
+    heartPath(x, y, size, rot || 0);
+    g.globalAlpha = alpha == null ? 1 : alpha;
+    g.fillStyle = glassGrad(-size, -size, size, size);
+    g.fill();
+    g.lineWidth = 2;
+    g.strokeStyle = 'rgba(255,255,255,0.75)';
+    g.stroke();
+    g.globalAlpha = 1;
     g.restore();
   }
 
@@ -1727,190 +1804,600 @@ const game = (() => {
     scoreEl.textContent = score;
   }
 
-  function die() {
-    if (dead) return;
-    playing = false;
-    dead = true;
-    shake = 15;
-    sfx.no(bird.x);
-    for (let i = 0; i < 26; i++) addSpark(bird.x, bird.y, 340 + Math.random() * 40);
-    ripples.push({ x: bird.x, y: bird.y, r: 10, a: 0.6 });
-    if (score > best) {
-      best = score;
-      try { localStorage.setItem('flappyHeartBest', String(best)); } catch (e) {}
-    }
-    bestEl.textContent = 'Лучший: ' + best;
-    titleEl.textContent = score >= 20 ? 'Ты профи 💗' : (score >= 8 ? 'Красиво летела!' : 'Ой...');
-    subEl.innerHTML = 'Очков: <b>' + score + '</b><br>Лучший результат: <b>' + best + '</b>';
-    playBtn.textContent = 'Ещё раз';
-    setTimeout(() => { if (dead) panel.classList.remove('hidden'); }, 550);
+  /* =========================================================
+     РЕЖИМ 1 — ПОЛЁТ
+     ========================================================= */
+  const GRAV_F = 0.0026, FLAP = -0.72;
+  let bird = { y: 0, v: 0 }, cols = [], flySpd = 0;
+
+  function gapCenter(gapH) {
+    const m = 70 * S();
+    const room = Math.max(20, H - gapH - m * 2);
+    return m + gapH / 2 + rnd() * room;
   }
 
-  function collide(time, s) {
-    const r = 15 * s;
-    for (let i = 0; i < cols.length; i++) {
-      const c = cols[i];
-      const gy = gapCenter(c, time);
-      if (!c.passed && c.x + c.w < bird.x) {
-        c.passed = true;
-        addScore(1);
-        sfx.pop(bird.x);
-      }
-      if (bird.x + r > c.x && bird.x - r < c.x + c.w) {
-        if (bird.y - r < gy - c.gapH / 2 || bird.y + r > gy + c.gapH / 2) { die(); return; }
-      }
-      if (c.coin && !c.coinGot &&
-          Math.abs(bird.x - (c.x + c.w / 2)) < r + 14 * s &&
-          Math.abs(bird.y - gy) < r + 17 * s) {
-        c.coinGot = true;
-        addScore(2);
-        sfx.restore(bird.x);
-        for (let k = 0; k < 10; k++) addSpark(bird.x, bird.y, 45 + Math.random() * 20);
-      }
-    }
-    if (bird.y > H - 8 * s || bird.y < -40) die();
-  }
-
-  function start() {
+  function addColumn(x) {
     const s = S();
-    seed = (Date.now() ^ Math.floor(Math.random() * 1e9)) % 4294967296 || 7;
-    cols = [];
-    score = 0;
-    dead = false;
-    playing = true;
-    shake = 0;
-    scoreEl.textContent = '0';
-    bestEl.textContent = 'Лучший: ' + best;
-    walk = H * 0.5;
-    bird = { x: W * (isMobile ? 0.28 : 0.3), y: H * 0.42, vy: FLAP * 0.55 * s, rot: 0, lastFlap: performance.now() };
-    let x = W + 130 * s;
-    const spacing = (isMobile ? 235 : 300) * s;
-    for (let i = 0; i < 4; i++) { addColumn(x); x += spacing; }
-    panel.classList.add('hidden');
+    const gapH = Math.max(125 * s, (215 - Math.min(60, score * 2.2)) * s);
+    cols.push({ x, w: 66 * s, gy: gapCenter(gapH), gap: gapH, passed: false });
+  }
+
+  function startFly() {
+    const s = S();
+    bird.y = H * 0.42; bird.v = 0;
+    cols = []; flySpd = 0.30 * s;
+    for (let i = 0; i < 4; i++) addColumn(W + 160 * s + i * 270 * s);
   }
 
   function flap() {
-    if (!open || dead) return;
-    if (!playing) { start(); return; }
+    bird.v = FLAP * S();
+    beep('tap');
+  }
+
+  function drawCol(c) {
+    const top = c.gy - c.gap / 2, bot = c.gy + c.gap / 2, r = 14 * S();
+    g.fillStyle = glassGrad(c.x, 0, c.x + c.w, H);
+    g.strokeStyle = 'rgba(255,255,255,0.6)';
+    g.lineWidth = 2;
+    for (const [y, h] of [[0, top], [bot, H - bot]]) {
+      g.beginPath();
+      if (g.roundRect) g.roundRect(c.x, y, c.w, h, r); else g.rect(c.x, y, c.w, h);
+      g.fill(); g.stroke();
+    }
+  }
+
+  function frameFly(dt) {
+    const s = S(), hr = 15 * s;
+    flySpd = (0.30 + Math.min(0.24, score * 0.004)) * s;
+
+    bird.v += GRAV_F * s * dt;
+    bird.y += bird.v * dt;
+
+    let last = 0;
+    for (const c of cols) { c.x -= flySpd * dt; if (c.x > last) last = c.x; }
+    if (last < W - 270 * s) addColumn(W + 20 * s);
+    cols = cols.filter(c => c.x + c.w > -40);
+
+    const bx = W * 0.3;
+    for (const c of cols) {
+      if (!c.passed && c.x + c.w < bx) { c.passed = true; addScore(1); beep('pop'); }
+      if (bx + hr > c.x && bx - hr < c.x + c.w &&
+          (bird.y - hr < c.gy - c.gap / 2 || bird.y + hr > c.gy + c.gap / 2)) {
+        return die(bx, bird.y);
+      }
+    }
+    if (bird.y < hr || bird.y > H - hr) return die(bx, Math.max(hr, Math.min(H - hr, bird.y)));
+
+    for (const c of cols) drawCol(c);
+    heartAt(bx, bird.y, 34 * s, Math.max(-0.5, Math.min(0.8, bird.v * 0.5)), 1);
+  }
+
+  /* =========================================================
+     РЕЖИМ 2 — ЗАБЕГ (только прыжок)
+     ========================================================= */
+  const GRAV_R = 0.0050, JUMP = -1.15;
+  const HERO_H = s => 38 * s;
+  const groundY = s => H - Math.max(60 * s, Math.min(H * 0.20, 140 * s));
+
+  let hero = { y: 0, v: 0, air: false, rot: 0 };
+  let obs = [], hills = [], streaks = [];
+  let runSpd = 0, gapLeft = 0, distAcc = 0, runDist = 0;
+
+  // время в воздухе: 2*|JUMP|/GRAV_R ≈ 460 мс, высота ≈ 131*s px
+  const AIR_MS = 2 * Math.abs(JUMP) / GRAV_R;
+
+  function makeHills() {
     const s = S();
-    bird.vy = FLAP * s;
-    bird.lastFlap = performance.now();
-    sfx.tap(bird.x);
-    for (let i = 0; i < 4; i++) addSpark(bird.x - 8 * s, bird.y + 10 * s, 340 + Math.random() * 30);
+    hills = [];
+    for (let i = 0; i < 7; i++) hills.push({ x: rnd() * W, w: rr(150, 330) * s, h: rr(50, 130) * s });
+    streaks = [];
+    for (let i = 0; i < 26; i++) streaks.push({ x: rnd() * W, o: rnd(), w: rr(14, 46) * s });
+  }
+
+  function requiredGap() {
+    // дистанция полёта + запас на приземление и разбег
+    return runSpd * (AIR_MS * 1.25 + rr(160, 620)) + 80 * S();
+  }
+
+  function addObstacle(x) {
+    const s = S(), hh = HERO_H(s);
+    if (rnd() < 0.22) {
+      // бонусная бусина в воздухе, не мешает
+      obs.push({ type: 'bead', x, y: groundY(s) - rr(80, 120) * s, r: 11 * s, got: false });
+      return;
+    }
+    const pair = rnd() < 0.22;
+    const w1 = rr(24, 36) * s;
+    obs.push({ type: 'rock', x, w: w1, h: hh * rr(0.95, 1.55) });
+    if (pair) {
+      const gap = rr(8, 18) * s, w2 = rr(20, 30) * s;
+      obs.push({ type: 'rock', x: x + w1 + gap, w: w2, h: hh * rr(0.85, 1.3) });
+    }
+  }
+
+  function startRun() {
+    const s = S();
+    hero.y = groundY(s); hero.v = 0; hero.air = false; hero.rot = 0;
+    obs = []; distAcc = 0; runDist = 0;
+    runSpd = 0.42 * s;
+    gapLeft = 420 * s;
+    makeHills();
+  }
+
+  function jump() {
+    if (hero.air) return;
+    hero.v = JUMP * S();
+    hero.air = true;
+    beep('tap');
+  }
+
+  function heroBox(s) {
+    const hh = HERO_H(s);
+    return { l: W * 0.22 - 12 * s, r: W * 0.22 + 12 * s, t: hero.y - hh * 0.9, b: hero.y - 2 * s };
+  }
+
+  function drawRock(o, gy) {
+    const s = S(), x = o.x, w = o.w, h = o.h, y = gy - h;
+    g.beginPath();
+    g.moveTo(x, gy);
+    g.lineTo(x + w * 0.16, y + h * 0.10);
+    g.lineTo(x + w * 0.5, y);
+    g.lineTo(x + w * 0.86, y + h * 0.13);
+    g.lineTo(x + w, gy);
+    g.closePath();
+    g.fillStyle = glassGrad(x, y, x + w, gy);
+    g.fill();
+    g.lineWidth = 2.2 * s;
+    g.strokeStyle = 'rgba(120,10,55,0.55)';
+    g.stroke();
+    g.beginPath();
+    g.moveTo(x + w * 0.5, y + h * 0.06);
+    g.lineTo(x + w * 0.34, gy - h * 0.05);
+    g.strokeStyle = 'rgba(255,255,255,0.65)';
+    g.lineWidth = 1.6 * s;
+    g.stroke();
+  }
+
+  function frameRun(dt) {
+    const s = S(), gy = groundY(s), hh = HERO_H(s);
+
+    // разгон по дистанции (как в динозаврике)
+    runDist += runSpd * dt;
+    runSpd = (0.42 + Math.min(0.75, runDist / (26000 * s))) * s;
+    const move = runSpd * dt;
+
+    // фон
+    for (const hl of hills) {
+      hl.x -= move * 0.26;
+      if (hl.x + hl.w < 0) { hl.x = W + rr(20, 180) * s; hl.w = rr(150, 330) * s; hl.h = rr(50, 130) * s; }
+      g.beginPath();
+      g.moveTo(hl.x, gy);
+      g.quadraticCurveTo(hl.x + hl.w * 0.5, gy - hl.h, hl.x + hl.w, gy);
+      g.closePath();
+      g.fillStyle = 'rgba(255,255,255,0.13)';
+      g.fill();
+    }
+
+    // земля
+    g.fillStyle = 'rgba(255,255,255,0.34)';
+    g.fillRect(0, gy, W, H - gy);
+    g.strokeStyle = 'rgba(255,255,255,0.7)';
+    g.lineWidth = 2 * s;
+    g.beginPath(); g.moveTo(0, gy); g.lineTo(W, gy); g.stroke();
+    g.fillStyle = 'rgba(255,255,255,0.5)';
+    for (const st of streaks) {
+      st.x -= move * 1.15;
+      if (st.x + st.w < 0) { st.x = W + rnd() * 60; st.o = rnd(); st.w = rr(14, 46) * s; }
+      g.fillRect(st.x, gy + 10 * s + st.o * (H - gy - 16 * s), st.w, 2 * s);
+    }
+
+    // герой
+    if (hero.air) {
+      hero.v += GRAV_R * s * dt;
+      hero.y += hero.v * dt;
+      hero.rot += dt * 0.004;
+      if (hero.y >= gy) { hero.y = gy; hero.v = 0; hero.air = false; hero.rot = 0; }
+    } else {
+      hero.rot = Math.sin(runDist / (26 * s)) * 0.12;
+    }
+
+    // препятствия
+    gapLeft -= move;
+    if (gapLeft <= 0) { addObstacle(W + 30 * s); gapLeft = requiredGap(); }
+    for (const o of obs) o.x -= move;
+    obs = obs.filter(o => (o.x + (o.w || o.r * 2)) > -60);
+
+    const hb = heroBox(s);
+    for (const o of obs) {
+      if (o.type === 'bead') {
+        g.beginPath();
+        g.arc(o.x, o.y, o.r, 0, Math.PI * 2);
+        g.fillStyle = 'rgba(255,255,255,0.55)';
+        g.fill();
+        g.strokeStyle = 'rgba(212,58,118,0.55)';
+        g.lineWidth = 2 * s;
+        g.stroke();
+        if (!o.got && Math.abs(o.x - W * 0.22) < o.r + 16 * s && o.y > hb.t && o.y < hb.b + 6 * s) {
+          o.got = true; addScore(2); beep('pop'); spark(o.x, o.y, 340);
+        }
+        continue;
+      }
+      drawRock(o, gy);
+      if (hb.r > o.x && hb.l < o.x + o.w && hb.b > gy - o.h) return die(hb.l + 12 * s, gy - o.h - 6 * s);
+    }
+
+    heartAt(W * 0.22, hero.y - hh * 0.5, hh, hero.rot, 1);
+
+    distAcc += move;
+    while (distAcc > 240 * s) { distAcc -= 240 * s; addScore(1); }
+  }
+
+  /* =========================================================
+     РЕЖИМ 3 — ТЕТРИС
+     ========================================================= */
+  const COLS = 10, ROWS = 18;
+  const SHAPES = [
+    { c: 0, m: [[1, 1, 1, 1]] },
+    { c: 1, m: [[1, 1], [1, 1]] },
+    { c: 2, m: [[0, 1, 0], [1, 1, 1]] },
+    { c: 3, m: [[0, 1, 1], [1, 1, 0]] },
+    { c: 4, m: [[1, 1, 0], [0, 1, 1]] },
+    { c: 5, m: [[1, 0, 0], [1, 1, 1]] },
+    { c: 6, m: [[0, 0, 1], [1, 1, 1]] }
+  ];
+  // собственная палитра ровно на 7 фигур (раньше брал из PALETTE — там было 5)
+  const TET_COLORS = [
+    { h: 344, s: 72, l: 68 }, { h: 352, s: 66, l: 62 }, { h: 334, s: 52, l: 71 },
+    { h: 8,   s: 62, l: 69 }, { h: 318, s: 48, l: 72 }, { h: 0,   s: 58, l: 65 },
+    { h: 330, s: 64, l: 75 }
+  ];
+  const colOf = i => TET_COLORS[((i | 0) % TET_COLORS.length + TET_COLORS.length) % TET_COLORS.length];
+
+  let board = [], piece = null, bag = [], dropAcc = 0, lines = 0, level = 1;
+  let flashRows = [], flashT = 0;
+
+  function tetMetrics() {
+    const cell = Math.max(10, Math.floor(Math.min(W * 0.9 / COLS, H * 0.74 / ROWS)));
+    const bw = cell * COLS, bh = cell * ROWS;
+    return { cell, bw, bh, ox: (W - bw) / 2, oy: Math.max(H * 0.13, (H - bh) / 2) };
+  }
+  const emptyRow = () => new Array(COLS).fill(-1);
+
+  function nextShape() {
+    if (!bag.length) {
+      bag = [0, 1, 2, 3, 4, 5, 6];
+      for (let i = bag.length - 1; i > 0; i--) {
+        const j = Math.floor(rnd() * (i + 1));
+        const t = bag[i]; bag[i] = bag[j]; bag[j] = t;
+      }
+    }
+    const idx = bag.pop();
+    const sh = SHAPES[idx] || SHAPES[0];           // защита от undefined
+    return { c: sh.c, m: sh.m.map(r => r.slice()) };
+  }
+
+  function fits(m, px, py) {
+    for (let y = 0; y < m.length; y++) for (let x = 0; x < m[y].length; x++) {
+      if (!m[y][x]) continue;
+      const bx = px + x, by = py + y;
+      if (bx < 0 || bx >= COLS || by >= ROWS) return false;
+      if (by >= 0 && board[by][bx] >= 0) return false;
+    }
+    return true;
+  }
+
+  function spawnPiece() {
+    const sh = nextShape();
+    piece = { m: sh.m, c: sh.c, x: Math.floor((COLS - sh.m[0].length) / 2), y: 0 };
+    if (!fits(piece.m, piece.x, piece.y)) {
+      const mt = tetMetrics();
+      die(mt.ox + mt.bw / 2, mt.oy + mt.cell * 2);
+      return false;
+    }
+    return true;
+  }
+
+  function addGarbageRow() {
+    const row = emptyRow();
+    for (let x = 0; x < COLS; x++) row[x] = Math.floor(rnd() * TET_COLORS.length);
+    const holes = 2 + Math.floor(rnd() * 3);
+    for (let i = 0; i < holes; i++) row[Math.floor(rnd() * COLS)] = -1;
+    board.shift();
+    board.push(row);
+  }
+
+  function clearLines() {
+    const full = [];
+    for (let y = 0; y < ROWS; y++) if (board[y].every(v => v >= 0)) full.push(y);
+    if (!full.length) return;
+    const mt = tetMetrics();
+    for (const y of full) {
+      for (let i = 0; i < 4; i++) spark(mt.ox + rnd() * mt.bw, mt.oy + y * mt.cell + mt.cell / 2, 330 + rnd() * 30);
+      board.splice(y, 1);
+      board.unshift(emptyRow());
+    }
+    flashRows = full.slice(); flashT = 220;
+    lines += full.length;
+    addScore([0, 1, 3, 5, 8][full.length] || 8);
+    beep('pop');
+    const nl = 1 + Math.floor(lines / 6);
+    if (nl > level) { level = nl; if (level >= 5 && level % 2 === 1) addGarbageRow(); }
+  }
+
+  function lockPiece() {
+    for (let y = 0; y < piece.m.length; y++) for (let x = 0; x < piece.m[y].length; x++) {
+      if (piece.m[y][x] && piece.y + y >= 0) board[piece.y + y][piece.x + x] = piece.c;
+    }
+    clearLines();
+    spawnPiece();
+  }
+
+  const tetMove = d => { if (piece && fits(piece.m, piece.x + d, piece.y)) { piece.x += d; beep('hover'); } };
+  function tetRotate() {
+    if (!piece) return;
+    const m = piece.m, r = m[0].map((_, i) => m.map(row => row[i]).reverse());
+    for (const k of [0, -1, 1, -2, 2]) {
+      if (fits(r, piece.x + k, piece.y)) { piece.m = r; piece.x += k; beep('letter'); return; }
+    }
+  }
+  function tetSoft() {
+    if (!piece) return false;
+    if (fits(piece.m, piece.x, piece.y + 1)) { piece.y++; dropAcc = 0; return false; }
+    lockPiece();
+    return true;     // фигура зафиксирована — жест надо прервать
+  }
+  function tetHard() {
+    if (!piece) return;
+    while (fits(piece.m, piece.x, piece.y + 1)) piece.y++;
+    beep('split');
+    lockPiece();
+  }
+
+  function startTet() {
+    board = [];
+    for (let y = 0; y < ROWS; y++) board.push(emptyRow());
+    bag = []; lines = 0; level = 1; dropAcc = 0; flashRows = []; flashT = 0;
+    spawnPiece();
+  }
+
+  function drawTetCell(px, py, cell, ci, ghost) {
+    const p = colOf(ci), r = cell * 0.24, i = cell * 0.08;
+    const x = px + i, y = py + i, w = cell - i * 2;
+    g.beginPath();
+    if (g.roundRect) g.roundRect(x, y, w, w, r); else g.rect(x, y, w, w);
+    if (ghost) {
+      g.strokeStyle = `hsla(${p.h},${p.s}%,${p.l}%,0.45)`;
+      g.lineWidth = Math.max(1.5, cell * 0.08);
+      g.stroke();
+      return;
+    }
+    const gr = g.createLinearGradient(x, y, x + w, y + w);
+    gr.addColorStop(0, `hsla(${p.h},${p.s}%,${Math.min(92, p.l + 16)}%,0.92)`);
+    gr.addColorStop(1, `hsla(${p.h},${p.s}%,${Math.max(38, p.l - 12)}%,0.80)`);
+    g.fillStyle = gr;
+    g.fill();
+    g.strokeStyle = 'rgba(255,255,255,0.7)';
+    g.lineWidth = Math.max(1, cell * 0.06);
+    g.stroke();
+  }
+
+  function frameTet(dt) {
+    const mt = tetMetrics(), { cell, bw, bh, ox, oy } = mt;
+
+    g.fillStyle = 'rgba(255,255,255,0.16)';
+    g.strokeStyle = 'rgba(255,255,255,0.6)';
+    g.lineWidth = 2;
+    g.beginPath();
+    if (g.roundRect) g.roundRect(ox - 6, oy - 6, bw + 12, bh + 12, 16); else g.rect(ox - 6, oy - 6, bw + 12, bh + 12);
+    g.fill(); g.stroke();
+
+    g.strokeStyle = 'rgba(255,255,255,0.18)';
+    g.lineWidth = 1;
+    g.beginPath();
+    for (let x = 1; x < COLS; x++) { g.moveTo(ox + x * cell, oy); g.lineTo(ox + x * cell, oy + bh); }
+    for (let y = 1; y < ROWS; y++) { g.moveTo(ox, oy + y * cell); g.lineTo(ox + bw, oy + y * cell); }
+    g.stroke();
+
+    for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
+      if (board[y] && board[y][x] >= 0) drawTetCell(ox + x * cell, oy + y * cell, cell, board[y][x], false);
+    }
+
+    if (flashT > 0) {
+      flashT -= dt;
+      g.fillStyle = `rgba(255,255,255,${Math.max(0, flashT / 220) * 0.55})`;
+      for (const y of flashRows) g.fillRect(ox, oy + y * cell, bw, cell);
+    }
+
+    if (playing && piece) {
+      dropAcc += dt;
+      const dropMs = Math.max(110, 640 - level * 55);
+      while (dropAcc >= dropMs) { dropAcc -= dropMs; tetSoft(); if (!piece) break; }
+    }
+
+    if (piece) {
+      let gy = piece.y;
+      while (fits(piece.m, piece.x, gy + 1)) gy++;
+      for (let y = 0; y < piece.m.length; y++) for (let x = 0; x < piece.m[y].length; x++) {
+        if (!piece.m[y][x]) continue;
+        if (gy !== piece.y) drawTetCell(ox + (piece.x + x) * cell, oy + (gy + y) * cell, cell, piece.c, true);
+        if (piece.y + y >= 0) drawTetCell(ox + (piece.x + x) * cell, oy + (piece.y + y) * cell, cell, piece.c, false);
+      }
+    }
+
+    bestEl.textContent = `Лучший: ${best.tet} · Уровень ${level}`;
+  }
+
+  /* =========================================================
+     ОБЩЕЕ УПРАВЛЕНИЕ РЕЖИМАМИ
+     ========================================================= */
+  function idle() {
+    playing = false; dead = false;
+    panel.classList.remove('hidden');
+    if (modesEl) modesEl.classList.remove('hidden');
+    titleEl.textContent = TITLE[mode];
+    subEl.textContent = HINT[mode];
+    playBtn.textContent = PLAY_LABEL[mode];
+    scoreEl.textContent = '0';
+    bestEl.textContent = 'Лучший: ' + best[mode];
+  }
+
+  function selectMode(m) {
+    if (!modeBtn[m]) return;
+    mode = m;
+    for (const k in modeBtn) if (modeBtn[k]) modeBtn[k].classList.toggle('sel', k === m);
+    beep('hover');
+    idle();
+  }
+
+  function start() {
+    reseed();
+    score = 0; dead = false; playing = true;
+    scoreEl.textContent = '0';
+    bestEl.textContent = 'Лучший: ' + best[mode];
+    panel.classList.add('hidden');
+    if (typeof clearGlass === 'function') clearGlass();
+    if (modesEl) modesEl.classList.add('hidden');
+    if (mode === 'fly') startFly();
+    else if (mode === 'run') startRun();
+    else startTet();
+  }
+
+  function die(x, y) {
+    if (!playing) return;
+    playing = false; dead = true; shake = 12;
+    beep('no');
+    for (let i = 0; i < 14; i++) spark(x + (rnd() - 0.5) * 40, y + (rnd() - 0.5) * 40, 330 + rnd() * 40);
+    if (score > best[mode]) {
+      best[mode] = score;
+      try { localStorage.setItem(BEST_KEY[mode], String(score)); } catch (e) {}
+    }
+    setTimeout(() => {
+      if (!open || playing) return;
+      panel.classList.remove('hidden');
+      if (modesEl) modesEl.classList.remove('hidden');
+      titleEl.textContent = score > 0 && score >= best[mode] ? 'Новый рекорд!' : 'Ой…';
+      subEl.textContent = mode === 'tet'
+        ? `Очки: ${score} · Уровень: ${level}`
+        : `Очки: ${score} · Лучший: ${best[mode]}`;
+      playBtn.textContent = 'Ещё раз';
+    }, 550);
+  }
+
+  function action() {
+    if (!open) return;
+    if (!playing) { if (!dead) start(); return; }
+    if (mode === 'fly') flap();
+    else if (mode === 'run') jump();
+    else tetRotate();
   }
 
   function enter() {
     if (open) return;
     open = true;
-    playing = false;
-    dead = false;
-    savedCard1 = card1Visible;
-    savedCard2 = card2Visible;
-    savedNo = noVisible;
-    if (card1Visible) card1.classList.add('game-hidden');
-    if (card2Visible) card2.classList.add('game-hidden');
-    card1Visible = false;
-    card2Visible = false;
-    noVisible = false;
-    btnNo.style.visibility = 'hidden';
+    hideEls.forEach(el => el.classList.add('game-hidden'));
     cv.classList.add('on');
     layer.classList.add('on');
-    panel.classList.remove('hidden');
-    titleEl.textContent = 'Секретный уровень 💗';
-    subEl.innerHTML = 'Десять сердечек за десять секунд — ты нашла игру!<br>Тап или пробел, чтобы взлететь. Сердечки в проёмах дают +2.';
-    playBtn.textContent = 'Полетели';
-    scoreEl.textContent = '0';
-    bestEl.textContent = 'Лучший: ' + best;
-    cols = [];
-    score = 0;
-    bird = { x: W * 0.3, y: H * 0.45, vy: 0, rot: 0, lastFlap: 0 };
-    sfx.yes();
+    glassCanvas.classList.add('lifted');
+    resizeCv();
+    selectMode(mode);
   }
 
   function exit() {
-    open = false;
-    playing = false;
-    dead = false;
-    cols = [];
+    if (!open) return;
+    open = false; playing = false; dead = false;
     cv.classList.remove('on');
     layer.classList.remove('on');
-    g.setTransform(DPR, 0, 0, DPR, 0, 0);
-    g.clearRect(0, 0, W, H);
-    card1.classList.remove('game-hidden');
-    card2.classList.remove('game-hidden');
-    card1Visible = savedCard1;
-    card2Visible = savedCard2;
-    noVisible = savedNo;
-    if (savedNo) btnNo.style.visibility = '';
+    glassCanvas.classList.remove('lifted');
+    hideEls.forEach(el => el.classList.remove('game-hidden'));
+    g.clearRect(0, 0, cv.width, cv.height);
   }
 
   function resizeCv() {
-    cv.width = Math.round(W * DPR);
-    cv.height = Math.round(H * DPR);
-    cv.style.width = W + 'px';
-    cv.style.height = H + 'px';
-    g.setTransform(DPR, 0, 0, DPR, 0, 0);
+    cv.width = W;
+    cv.height = H;
+    if (open && mode === 'run' && !hills.length) makeHills();
   }
 
   function frame(dt, time) {
     if (!open) return;
-    const s = S();
-    const step = Math.min(34, dt > 0 ? dt : 16);
-
-    g.setTransform(DPR, 0, 0, DPR, 0, 0);
+    dt = Math.min(34, dt);
     g.clearRect(0, 0, W, H);
-    if (shake > 0.3) {
+    g.save();
+    if (shake > 0) {
+      shake *= 0.86;
+      if (shake < 0.4) shake = 0;
       g.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake);
-      shake *= 0.88;
     }
-
-    if (playing) {
-      const speed = (0.26 + Math.min(0.13, score * 0.0035)) * s;
-      bird.vy += GRAV * s * step;
-      bird.y += bird.vy * step;
-      bird.rot = Math.max(-0.55, Math.min(1.15, (bird.vy / s) * 1.5));
-      for (let i = 0; i < cols.length; i++) cols[i].x -= speed * step;
-      while (cols.length && cols[0].x + cols[0].w < -80) cols.shift();
-      const spacing = (isMobile ? 235 : 300) * s;
-      const lastX = cols.length ? cols[cols.length - 1].x : W;
-      if (lastX < W + spacing) addColumn(lastX + spacing);   // карта достраивается бесконечно
-      if (Math.random() < 0.45) addSpark(bird.x - 12 * s, bird.y + 8 * s, 335 + Math.random() * 30);
-      collide(time, s);
-    } else if (dead) {
-      bird.vy += GRAV * s * step;
-      bird.y = Math.min(H + 80, bird.y + bird.vy * step);
-      bird.rot = Math.min(1.6, bird.rot + 0.0025 * step);
-    } else {
-      bird.y = H * 0.45 + Math.sin(time * 0.004) * 10 * s;
-      bird.rot = Math.sin(time * 0.004) * 0.12;
-    }
-
-    for (let i = 0; i < cols.length; i++) {
-      const c = cols[i];
-      const gy = gapCenter(c, time);
-      drawCol(c, gy, s);
-      drawCoin(c, gy, time, s);
-    }
-    g.fillStyle = 'rgba(255,255,255,0.18)';
-    g.fillRect(0, H - 6 * s, W, 6 * s);
-    drawBird(time, s);
+    if (mode === 'fly') frameFly(playing ? dt : 0);
+    else if (mode === 'run') frameRun(playing ? dt : 0);
+    else frameTet(dt);
+    g.restore();
   }
 
-  cv.addEventListener('pointerdown', e => { e.preventDefault(); flap(); });
-  playBtn.addEventListener('click', () => { if (!playing || dead) start(); });
-  exitBtn.addEventListener('click', exit);
-  window.addEventListener('keydown', e => {
+  /* ---------- ввод ---------- */
+  const ptr = { down: false, x: 0, y: 0, sx: 0, sy: 0, t: 0, moved: 0 };
+
+  cv.addEventListener('pointerdown', e => {
     if (!open) return;
-    if (e.code === 'Space' || e.code === 'ArrowUp') {
-      e.preventDefault();
-      if (dead) start(); else flap();
-    } else if (e.code === 'Escape') {
-      exit();
+    e.preventDefault();
+    if (mode === 'tet' && playing) {
+      ptr.down = true; ptr.x = ptr.sx = e.clientX; ptr.y = ptr.sy = e.clientY;
+      ptr.t = performance.now(); ptr.moved = 0;
+      return;
+    }
+    action();
+  }, { passive: false });
+
+  cv.addEventListener('pointermove', e => {
+    if (!ptr.down || mode !== 'tet') return;
+    const { cell } = tetMetrics();
+    const dx = e.clientX - ptr.x, dy = e.clientY - ptr.y;
+    if (Math.abs(dx) > cell * 0.8) {
+      tetMove(dx > 0 ? 1 : -1);
+      ptr.x = e.clientX; ptr.moved += Math.abs(dx);
+    }
+    if (dy > cell * 0.8) {
+      const locked = tetSoft();
+      ptr.y = e.clientY; ptr.moved += dy;
+      if (locked) { ptr.down = false; return; }   // для новой фигуры нужен новый свайп
     }
   });
 
+  window.addEventListener('pointerup', e => {
+    if (!ptr.down) { return; }
+    ptr.down = false;
+    if (mode !== 'tet') return;
+    const dt = performance.now() - ptr.t;
+    const dy = e.clientY - ptr.sy, dx = e.clientX - ptr.sx;
+    const { cell } = tetMetrics();
+    if (dy > cell * 2 && dt < 450) tetHard();
+    else if (ptr.moved < cell * 0.6 && Math.abs(dx) < cell * 0.6 && dt < 400) tetRotate();
+  });
+  window.addEventListener('pointercancel', () => { ptr.down = false; });
+
+  for (const k in modeBtn) {
+    if (modeBtn[k]) modeBtn[k].addEventListener('click', e => { e.stopPropagation(); selectMode(k); });
+  }
+  playBtn.addEventListener('click', e => { e.stopPropagation(); start(); });
+  exitBtn.addEventListener('click', e => { e.stopPropagation(); exit(); });
+
+  window.addEventListener('keydown', e => {
+    if (!open) return;
+    if (e.code === 'Escape') { exit(); return; }
+    if (mode === 'tet' && playing) {
+      if (e.code === 'ArrowLeft') { tetMove(-1); e.preventDefault(); }
+      else if (e.code === 'ArrowRight') { tetMove(1); e.preventDefault(); }
+      else if (e.code === 'ArrowDown') { tetSoft(); e.preventDefault(); }
+      else if (e.code === 'ArrowUp' || e.code === 'KeyW') { tetRotate(); e.preventDefault(); }
+      else if (e.code === 'Space') { tetHard(); e.preventDefault(); }
+      return;
+    }
+    if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') { action(); e.preventDefault(); }
+  });
+
   return {
-    enter, exit, flap, frame,
+    enter, exit, frame,
+    flap: action,
     resize: resizeCv,
     get open() { return open; },
     get playing() { return playing; }
@@ -1925,6 +2412,7 @@ let resizeTimer = null;
 function resize() {
   W = window.innerWidth;
   H = window.innerHeight;
+  document.documentElement.style.setProperty('--app-h', H + 'px');
   isMobile = Math.min(W, H) < 700;
 
   heartCanvas.width = Math.round(W * DPR);
@@ -2008,7 +2496,7 @@ function animate(time) {
 
   drawRipples();
   if (game.open) game.frame(dt, time);
-  if (!glassEveryOther || frameParity === 0) renderGL();
+  if (!game.playing && (!glassEveryOther || frameParity === 0)) renderGL();
 }
 
 resize();
