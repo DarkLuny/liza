@@ -6,13 +6,8 @@
 <title>Для тебя 💕</title>
 <style>
   * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
+    margin: 0; padding: 0; box-sizing: border-box;
+    -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;
     -webkit-touch-callout: none;
   }
 
@@ -21,7 +16,7 @@
     overflow: hidden;
     background: #ffb6c8;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
-    touch-action: manipulation;
+    touch-action: none;
     -webkit-tap-highlight-color: transparent;
     -webkit-font-smoothing: antialiased;
   }
@@ -31,13 +26,9 @@
   #glassCanvas { z-index: 2; pointer-events: none; }
 
   .stage {
-    position: relative;
-    z-index: 3;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    position: relative; z-index: 3;
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
     pointer-events: none;
   }
 
@@ -73,10 +64,8 @@
   }
 
   .buttons-container {
-    display: flex;
-    gap: 16px;
-    justify-content: center;
-    align-items: center;
+    display: flex; gap: 16px;
+    justify-content: center; align-items: center;
     flex-wrap: wrap;
   }
 
@@ -95,12 +84,13 @@
     text-shadow: 0 1px 0 rgba(255,255,255,0.45);
     transition: transform 0.18s cubic-bezier(.34,1.56,.64,1);
   }
-
+  
   .btn-yes:hover  { transform: scale(1.1); }
   .btn-yes:active { transform: scale(0.94); }
 
   .btn-no {
     z-index: 100;
+    color: #55071d;
     transition: left 0.42s cubic-bezier(.3,1.15,.4,1),
                 top  0.42s cubic-bezier(.3,1.15,.4,1);
   }
@@ -119,11 +109,12 @@
   .letter {
     display: inline-block;
     cursor: pointer;
-    transition: transform 0.18s cubic-bezier(.34,1.56,.64,1),
-                color 0.18s ease,
-                text-shadow 0.18s ease;
+    transition: transform 0.22s cubic-bezier(.34,1.56,.64,1),
+                color 0.22s ease,
+                text-shadow 0.22s ease;
   }
-  .letter:hover {
+
+  .letter.hot {
     transform: translateY(-4px) scale(1.15);
     color: #a1114f;
     text-shadow:
@@ -140,7 +131,6 @@
     60%  { transform: scale(1.3) rotate(8deg); opacity: 1; }
     100% { transform: scale(1) rotate(0deg); opacity: 1; }
   }
-
   .letter.back2 { animation: backDrop 0.85s cubic-bezier(.3,1.4,.5,1); }
   @keyframes backDrop {
     0%   { transform: translateY(-38px) scale(1.1); opacity: 0; filter: blur(4px); }
@@ -148,21 +138,18 @@
     75%  { transform: translateY(-3px) scale(1.04); }
     100% { transform: translateY(0) scale(1); opacity: 1; }
   }
-
   .letter.back3 { animation: backSpin 0.9s cubic-bezier(.22,1,.3,1); }
   @keyframes backSpin {
     0%   { transform: rotateY(90deg) scale(0.6); opacity: 0; }
     60%  { transform: rotateY(-14deg) scale(1.12); opacity: 1; }
     100% { transform: rotateY(0deg) scale(1); opacity: 1; }
   }
-
   .letter.back4 { animation: backGlow 1s ease-out; }
   @keyframes backGlow {
     0%   { opacity: 0; filter: blur(9px); text-shadow: 0 0 26px rgba(255,110,175,1); transform: scale(1.35); }
     50%  { opacity: 1; filter: blur(2px); text-shadow: 0 0 18px rgba(255,110,175,0.9); transform: scale(1.08); }
     100% { opacity: 1; filter: blur(0); transform: scale(1); }
   }
-
   .letter.back5 { animation: backSwing 0.95s cubic-bezier(.28,1.5,.45,1); }
   @keyframes backSwing {
     0%   { transform: translateX(-22px) rotate(-40deg) scale(0.5); opacity: 0; }
@@ -170,7 +157,6 @@
     70%  { transform: translateX(-3px) rotate(-6deg) scale(0.98); }
     100% { transform: translateX(0) rotate(0deg) scale(1); opacity: 1; }
   }
-
   .letter.back6 { animation: backRise 0.9s cubic-bezier(.25,1.3,.4,1); }
   @keyframes backRise {
     0%   { transform: translateY(26px) scaleY(0.4) scaleX(1.25); opacity: 0; }
@@ -196,11 +182,8 @@
 
   #soundToggle {
     position: fixed;
-    top: 14px;
-    right: 14px;
-    z-index: 200;
-    width: 42px;
-    height: 42px;
+    top: 14px; right: 14px; z-index: 200;
+    width: 42px; height: 42px;
     border: 1px solid rgba(255,255,255,0.4);
     border-radius: 50%;
     background: rgba(255,255,255,0.18);
@@ -243,10 +226,10 @@
    ============================================================ */
 const sfx = (() => {
   let ctx = null, master = null, muted = false;
-  let armed = false;              // был ли настоящий жест пользователя
+  let armed = false;
 
   function ensure() {
-    if (!armed) return null;      // до жеста контекст не создаём вообще
+    if (!armed) return null;
     if (!ctx) {
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return null;
@@ -259,26 +242,20 @@ const sfx = (() => {
     return ctx;
   }
 
-  function arm() {
-    armed = true;
-    return ensure();
-  }
+  function arm() { armed = true; return ensure(); }
 
   function tone({ freq = 440, type = 'sine', dur = 0.25, vol = 0.2, delay = 0, glide = null, pan = 0 }) {
     if (muted) return;
     const c = ensure(); if (!c) return;
     const t0 = c.currentTime + delay;
-
     const osc = c.createOscillator();
     const g = c.createGain();
     osc.type = type;
     osc.frequency.setValueAtTime(freq, t0);
     if (glide !== null) osc.frequency.exponentialRampToValueAtTime(Math.max(20, glide), t0 + dur);
-
     g.gain.setValueAtTime(0.0001, t0);
     g.gain.exponentialRampToValueAtTime(vol, t0 + 0.012);
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-
     let node = g;
     if (c.createStereoPanner && pan !== 0) {
       const p = c.createStereoPanner();
@@ -286,7 +263,6 @@ const sfx = (() => {
       g.connect(p);
       node = p;
     }
-
     osc.connect(g);
     node.connect(master);
     osc.start(t0);
@@ -301,18 +277,14 @@ const sfx = (() => {
     const buf = c.createBuffer(1, len, c.sampleRate);
     const data = buf.getChannelData(0);
     for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / len);
-
     const src = c.createBufferSource();
     src.buffer = buf;
-
     const filt = c.createBiquadFilter();
     filt.type = 'highpass';
     filt.frequency.value = hp;
-
     const g = c.createGain();
     g.gain.setValueAtTime(vol, t0);
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-
     src.connect(filt); filt.connect(g); g.connect(master);
     src.start(t0);
   }
@@ -324,10 +296,8 @@ const sfx = (() => {
     unlock: () => ensure(),
     get muted() { return muted; },
     toggle() { muted = !muted; if (!muted) ensure(); return muted; },
-
     pop(x) {
-      const p = panFor(x);
-      tone({ freq: 520 + Math.random() * 120, type: 'sine', dur: 0.22, vol: 0.16, glide: 190, pan: p });
+      tone({ freq: 520 + Math.random() * 120, type: 'sine', dur: 0.22, vol: 0.16, glide: 190, pan: panFor(x) });
       noise({ dur: 0.13, vol: 0.05, hp: 2200 });
     },
     split(x) {
@@ -341,16 +311,17 @@ const sfx = (() => {
       tone({ freq: 1174.7, type: 'sine', dur: 0.4, vol: 0.09, pan: p });
       tone({ freq: 1567.9, type: 'sine', dur: 0.5, vol: 0.06, delay: 0.06, pan: p });
     },
-    // хруст расщепления буквы
     letter(x) {
       const p = panFor(x);
       noise({ dur: 0.09, vol: 0.09, hp: 3400 });
       tone({ freq: 1400, type: 'triangle', dur: 0.12, vol: 0.07, glide: 380, pan: p });
       tone({ freq: 620, type: 'sine', dur: 0.22, vol: 0.06, glide: 180, delay: 0.03, pan: p });
     },
+    hover(x) {
+      tone({ freq: 900 + Math.random() * 300, type: 'sine', dur: 0.08, vol: 0.03, pan: panFor(x) });
+    },
     yes() {
-      const notes = [523.25, 659.25, 783.99, 1046.5, 1318.5];
-      notes.forEach((f, i) => {
+      [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((f, i) => {
         tone({ freq: f, type: 'triangle', dur: 0.7, vol: 0.14, delay: i * 0.085 });
         tone({ freq: f * 2, type: 'sine', dur: 0.5, vol: 0.05, delay: i * 0.085 });
       });
@@ -371,10 +342,17 @@ const sfx = (() => {
    CANVAS 2D
    ============================================================ */
 const heartCanvas = document.getElementById('heartCanvas');
-const ctx = heartCanvas.getContext('2d');
+const ctx = heartCanvas.getContext('2d', { alpha: false });
 const glassCanvas = document.getElementById('glassCanvas');
 
-let W = 0, H = 0, DPR = 1;
+// фон рисуется в треть разрешения и растягивается: он весь из мягких
+// градиентов, поэтому апскейл визуально неотличим, а пикселей в 9 раз меньше
+const BG_SCALE = 0.34;
+const bgCanvas = document.createElement('canvas');
+const bctx = bgCanvas.getContext('2d', { alpha: false });
+
+let W = 0, H = 0;
+const DPR = 1;                 // сцена в CSS-пикселях
 let isMobile = false;
 
 let hearts = [], particles = [], ripples = [], bokeh = [], blobs = [];
@@ -383,10 +361,108 @@ let noVisible = true;
 let noButtonRunning = false;
 let lastSpawn = 0;
 
+const AUTOSPAWN_CAP = 70;
+const MAX_PARTICLES = 240;
+
 const pointer = { x: 0, y: 0, active: false };
 
+const PALETTE = [
+  { h: 344, s: 58, l: 66 },
+  { h: 352, s: 66, l: 62 },
+  { h: 336, s: 44, l: 70 },
+  { h:   8, s: 54, l: 69 },
+  { h: 328, s: 38, l: 73 }
+];
+
+/* ---------- спрайты сердец ---------- */
+const heartSprites = new Map();
+
+function tracePath(c, d) {
+  c.beginPath();
+  c.moveTo(0, -d * 0.26);
+  c.bezierCurveTo(-d * 0.52, -d * 0.86, -d * 1.02, -d * 0.10, 0, d * 0.66);
+  c.bezierCurveTo(d * 1.02, -d * 0.10, d * 0.52, -d * 0.86, 0, -d * 0.26);
+  c.closePath();
+}
+
+function heartSprite(pi, size, blur) {
+  const d = Math.max(6, Math.round(size / 3) * 3);
+  const b = Math.min(8, Math.round(blur));
+  const key = pi * 10000 + d * 10 + b;
+
+  let sp = heartSprites.get(key);
+  if (sp) return sp;
+
+  const half = Math.ceil(d * 1.85 + b * 3 + 6);
+  const S = half * 2;
+
+  const cv = document.createElement('canvas');
+  cv.width = S; cv.height = S;
+  const c = cv.getContext('2d');
+  c.translate(half, half);
+  if (b > 0) c.filter = 'blur(' + b + 'px)';
+
+  const { h, s, l } = PALETTE[pi];
+
+  c.shadowColor = `hsla(${h - 10}, 45%, 35%, 0.22)`;
+  c.shadowBlur = d * 0.55;
+  c.shadowOffsetY = d * 0.14;
+
+  const g = c.createLinearGradient(-d * 0.55, -d * 0.7, d * 0.5, d * 0.7);
+  g.addColorStop(0,    `hsl(${h + 4}, ${s - 6}%, ${Math.min(l + 11, 88)}%)`);
+  g.addColorStop(0.55, `hsl(${h}, ${s}%, ${l}%)`);
+  g.addColorStop(1,    `hsl(${h - 8}, ${s - 10}%, ${Math.max(l - 15, 38)}%)`);
+  c.fillStyle = g;
+  tracePath(c, d);
+  c.fill();
+
+  c.shadowBlur = 0;
+  c.shadowOffsetY = 0;
+
+  c.save();
+  tracePath(c, d);
+  c.clip();
+  const hg = c.createRadialGradient(-d * 0.3, -d * 0.34, 0, -d * 0.3, -d * 0.34, d * 0.85);
+  hg.addColorStop(0,   'rgba(255,255,255,0.30)');
+  hg.addColorStop(0.4, 'rgba(255,255,255,0.09)');
+  hg.addColorStop(1,   'rgba(255,255,255,0)');
+  c.fillStyle = hg;
+  c.fillRect(-d * 1.2, -d * 1.2, d * 2.4, d * 2.4);
+  c.restore();
+
+  sp = { cv, d, half };
+  if (heartSprites.size > 200) heartSprites.clear();
+  heartSprites.set(key, sp);
+  return sp;
+}
+
+/* ---------- спрайты искр ---------- */
+const sparkSprites = new Map();
+
+function sparkSprite(hue) {
+  const hb = Math.round(hue / 8) * 8;
+  let cv = sparkSprites.get(hb);
+  if (cv) return cv;
+
+  const S = 32;
+  cv = document.createElement('canvas');
+  cv.width = S; cv.height = S;
+  const c = cv.getContext('2d');
+  const g = c.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
+  g.addColorStop(0,    `hsla(${hb}, 60%, 88%, 1)`);
+  g.addColorStop(0.42, `hsla(${hb}, 58%, 78%, 0.85)`);
+  g.addColorStop(0.7,  `hsla(${hb}, 55%, 80%, 0.28)`);
+  g.addColorStop(1,    `hsla(${hb}, 55%, 80%, 0)`);
+  c.fillStyle = g;
+  c.fillRect(0, 0, S, S);
+
+  sparkSprites.set(hb, cv);
+  return cv;
+}
+
 class SparkParticle {
-  constructor(x, y, hue) {
+  constructor(x, y, hue) { this.reset(x, y, hue); }
+  reset(x, y, hue) {
     this.x = x; this.y = y;
     const a = Math.random() * Math.PI * 2;
     const s = 1 + Math.random() * 3.4;
@@ -395,7 +471,8 @@ class SparkParticle {
     this.life = 1;
     this.decay = 0.012 + Math.random() * 0.02;
     this.size = 1.4 + Math.random() * 2.6;
-    this.hue = hue ?? 345;
+    this.spr = sparkSprite(hue ?? 345);
+    return this;
   }
   update() {
     this.x += this.vx;
@@ -406,23 +483,24 @@ class SparkParticle {
   }
   draw() {
     if (this.life <= 0) return;
-    ctx.save();
-    ctx.globalAlpha = Math.max(0, this.life);
-    ctx.fillStyle = `hsla(${this.hue}, 55%, ${72 + this.life * 15}%, ${0.75 * this.life})`;
-    ctx.shadowColor = `hsla(${this.hue}, 50%, 80%, 0.5)`;
-    ctx.shadowBlur = 8;
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.size * this.life, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
+    const r = this.size * this.life * 2.2;
+    ctx.globalAlpha = 0.78 * this.life;
+    ctx.drawImage(this.spr, this.x - r, this.y - r, r * 2, r * 2);
   }
 }
 
+const sparkPool = [];
+function addSpark(x, y, hue) {
+  if (particles.length >= MAX_PARTICLES) return;
+  const p = sparkPool.pop();
+  particles.push(p ? p.reset(x, y, hue) : new SparkParticle(x, y, hue));
+}
+
+/* ---------- сердце ---------- */
 class Heart3D {
   constructor(x, y, sz) {
     this.x = x ?? Math.random() * W;
     this.y = y ?? H + Math.random() * 100;
-
     this.depth = Math.random();
 
     const base = isMobile ? 13 : 22;
@@ -431,14 +509,8 @@ class Heart3D {
     this.vx = (Math.random() - 0.5) * 0.8 * (0.5 + this.depth);
     this.vy = (-Math.random() * 0.8 - 0.4) * (0.5 + this.depth);
 
-    const pal = [
-      { h: 344, s: 58, l: 66 },
-      { h: 352, s: 66, l: 62 },
-      { h: 336, s: 44, l: 70 },
-      { h:   8, s: 54, l: 69 },
-      { h: 328, s: 38, l: 73 }
-    ];
-    this.c = pal[Math.floor(Math.random() * pal.length)];
+    this.pi = Math.floor(Math.random() * PALETTE.length);
+    this.hue = PALETTE[this.pi].h;
 
     this.alpha = 0.42 + this.depth * 0.42;
     this.blur = (1 - this.depth) * (isMobile ? 1.2 : 2.6);
@@ -449,25 +521,27 @@ class Heart3D {
     this.pulse = 0.012 + Math.random() * 0.018;
   }
 
-  update() {
-    this.phase += this.pulse;
-    this.rot += this.rotSpeed;
-    this.x += this.vx + Math.sin(this.phase * 0.4) * 0.18;
-    this.y += this.vy;
+  update(step) {
+    const k = step || 1;
+    this.phase += this.pulse * k;
+    this.rot += this.rotSpeed * k;
+    this.x += (this.vx + Math.sin(this.phase * 0.4) * 0.18) * k;
+    this.y += this.vy * k;
 
     if (pointer.active) {
       const dx = this.x - pointer.x, dy = this.y - pointer.y;
-      const dist = Math.hypot(dx, dy);
+      const d2 = dx * dx + dy * dy;
       const R = isMobile ? 90 : 130;
-      if (dist < R && dist > 0.01) {
-        const f = (1 - dist / R) * 0.55 * (0.4 + this.depth);
+      if (d2 < R * R && d2 > 0.0001) {
+        const dist = Math.sqrt(d2);
+        const f = (1 - dist / R) * 0.035 * (0.4 + this.depth) * k;
         this.vx += (dx / dist) * f;
         this.vy += (dy / dist) * f;
       }
     }
     this.vx *= 0.99; this.vy *= 0.99;
-    this.vx = Math.max(-4, Math.min(4, this.vx));
-    this.vy = Math.max(-4, Math.min(4, this.vy));
+    if (this.vx > 4) this.vx = 4; else if (this.vx < -4) this.vx = -4;
+    if (this.vy > 4) this.vy = 4; else if (this.vy < -4) this.vy = -4;
 
     if (this.x < -this.size) { this.x = -this.size; this.vx *= -1; }
     if (this.x > W + this.size) { this.x = W + this.size; this.vx *= -1; }
@@ -475,63 +549,32 @@ class Heart3D {
     if (this.y > H + this.size) { this.y = H + this.size; this.vy *= -1; }
   }
 
-  path(d) {
-    ctx.beginPath();
-    ctx.moveTo(0, -d * 0.26);
-    ctx.bezierCurveTo(-d * 0.52, -d * 0.86, -d * 1.02, -d * 0.10, 0, d * 0.66);
-    ctx.bezierCurveTo(d * 1.02, -d * 0.10, d * 0.52, -d * 0.86, 0, -d * 0.26);
-    ctx.closePath();
-  }
+  draw(c) {
+    const g2 = c || ctx;
+    const m = this.size * 2.2;
+    if (this.x < -m || this.x > W + m || this.y < -m || this.y > H + m) return;
 
-  draw() {
-    const d = this.size;
-    const { h, s, l } = this.c;
+    const sp = heartSprite(this.pi, this.size, this.blur);
+    const k = this.size / sp.d;
     const p = 1 + Math.sin(this.phase) * 0.03;
 
-    ctx.save();
-    if (this.blur > 0.5) ctx.filter = `blur(${this.blur.toFixed(1)}px)`;
-    ctx.globalAlpha = this.alpha;
-    ctx.translate(this.x, this.y);
-    ctx.rotate(this.rot + Math.sin(this.phase * 0.5) * 0.04);
-    ctx.scale(p, 1 / p);
-
-    ctx.shadowColor = `hsla(${h - 10}, 45%, 35%, 0.22)`;
-    ctx.shadowBlur = d * 0.55;
-    ctx.shadowOffsetY = d * 0.14;
-
-    const g = ctx.createLinearGradient(-d * 0.55, -d * 0.7, d * 0.5, d * 0.7);
-    g.addColorStop(0,    `hsl(${h + 4}, ${s - 6}%, ${Math.min(l + 11, 88)}%)`);
-    g.addColorStop(0.55, `hsl(${h}, ${s}%, ${l}%)`);
-    g.addColorStop(1,    `hsl(${h - 8}, ${s - 10}%, ${Math.max(l - 15, 38)}%)`);
-    ctx.fillStyle = g;
-    this.path(d);
-    ctx.fill();
-
-    ctx.shadowBlur = 0;
-    ctx.shadowOffsetY = 0;
-
-    ctx.save();
-    this.path(d);
-    ctx.clip();
-    const hg = ctx.createRadialGradient(-d * 0.3, -d * 0.34, 0, -d * 0.3, -d * 0.34, d * 0.85);
-    hg.addColorStop(0,   'rgba(255,255,255,0.30)');
-    hg.addColorStop(0.4, 'rgba(255,255,255,0.09)');
-    hg.addColorStop(1,   'rgba(255,255,255,0)');
-    ctx.fillStyle = hg;
-    ctx.fillRect(-d * 1.2, -d * 1.2, d * 2.4, d * 2.4);
-    ctx.restore();
-
-    ctx.restore();
-    ctx.filter = 'none';
+    g2.save();
+    g2.globalAlpha = this.alpha;
+    g2.translate(this.x, this.y);
+    g2.rotate(this.rot + Math.sin(this.phase * 0.5) * 0.04);
+    g2.scale(k * p, k / p);
+    g2.drawImage(sp.cv, -sp.half, -sp.half);
+    g2.restore();
   }
 
   isClicked(mx, my) {
-    return Math.hypot(this.x - mx, this.y - my) < this.size * 1.2;
+    const dx = this.x - mx, dy = this.y - my, r = this.size * 1.2;
+    return dx * dx + dy * dy < r * r;
   }
 
   split() {
     const n = 2 + Math.floor(Math.random() * 2), ns = this.size * 0.6;
-    for (let i = 0; i < 12; i++) particles.push(new SparkParticle(this.x, this.y, this.c.h));
+    for (let i = 0; i < 12; i++) addSpark(this.x, this.y, this.hue);
     ripples.push({ x: this.x, y: this.y, r: this.size * 0.5, a: 0.4 });
     if (ns < (isMobile ? 7 : 5)) return [];
     const arr = [];
@@ -545,8 +588,11 @@ class Heart3D {
   }
 }
 
+/* ---------- фон ---------- */
+let vignette = null;
+let bgGrad = null, bgGradKey = -1;
+
 function makeScenery() {
-  blobs = [];
   const colors = [
     'rgba(255,150,200,0.55)',
     'rgba(255,205,160,0.45)',
@@ -554,13 +600,16 @@ function makeScenery() {
     'rgba(255,120,150,0.35)',
     'rgba(255,245,215,0.50)'
   ];
+
+  blobs = [];
   const n = 4 + Math.floor(Math.random() * 3);
   for (let i = 0; i < n; i++) {
+    const rr = (0.25 + Math.random() * 0.35) * Math.min(W, H);
+    const grad = bctx.createRadialGradient(0, 0, 0, 0, 0, rr);
+    grad.addColorStop(0, colors[i % colors.length]);
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
     blobs.push({
-      x: Math.random(),
-      y: Math.random(),
-      r: 0.25 + Math.random() * 0.35,
-      c: colors[i % colors.length],
+      x: Math.random(), y: Math.random(), r: rr, grad,
       sp: 0.00006 + Math.random() * 0.00012,
       ph: Math.random() * 6.283,
       ax: 0.06 + Math.random() * 0.1,
@@ -577,57 +626,64 @@ function makeScenery() {
     b.vx *= 0.25; b.vy *= 0.25;
     bokeh.push(b);
   }
+
+  vignette = bctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.max(W, H) * 0.78);
+  vignette.addColorStop(0, 'rgba(0,0,0,0)');
+  vignette.addColorStop(1, 'rgba(190,70,120,0.22)');
+
+  bgGrad = null;
+  bgGradKey = -1;
 }
 
-function drawBackground(time) {
+function paintBackgroundLayer(time) {
   const s = Math.sin(time * 0.00012), c = Math.cos(time * 0.00009);
-  const g = ctx.createLinearGradient(0, 0, W, H);
-  g.addColorStop(0,   `hsl(${348 + s * 10}, 82%, ${74 + s * 4}%)`);
-  g.addColorStop(0.5, `hsl(${322 + c * 12}, 70%, ${70 + c * 4}%)`);
-  g.addColorStop(1,   `hsl(${12 + s * 8}, 78%, ${76 + c * 3}%)`);
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, W, H);
 
-  ctx.save();
-  ctx.globalCompositeOperation = 'lighter';
-  for (const b of blobs) {
+  const key = Math.round(s * 40) * 100 + Math.round(c * 40);
+  if (key !== bgGradKey) {
+    bgGrad = bctx.createLinearGradient(0, 0, W, H);
+    bgGrad.addColorStop(0,   `hsl(${348 + s * 10}, 82%, ${74 + s * 4}%)`);
+    bgGrad.addColorStop(0.5, `hsl(${322 + c * 12}, 70%, ${70 + c * 4}%)`);
+    bgGrad.addColorStop(1,   `hsl(${12 + s * 8}, 78%, ${76 + c * 3}%)`);
+    bgGradKey = key;
+  }
+  bctx.fillStyle = bgGrad;
+  bctx.fillRect(0, 0, W, H);
+
+  bctx.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < blobs.length; i++) {
+    const b = blobs[i];
     const bx = (b.x + Math.sin(time * b.sp + b.ph) * b.ax) * W;
     const by = (b.y + Math.cos(time * b.sp * 1.3 + b.ph) * b.ay) * H;
-    const br = b.r * Math.min(W, H);
-    const rg = ctx.createRadialGradient(bx, by, 0, bx, by, br);
-    rg.addColorStop(0, b.c);
-    rg.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = rg;
-    ctx.beginPath();
-    ctx.arc(bx, by, br, 0, Math.PI * 2);
-    ctx.fill();
+    bctx.save();
+    bctx.translate(bx, by);
+    bctx.fillStyle = b.grad;
+    bctx.fillRect(-b.r, -b.r, b.r * 2, b.r * 2);
+    bctx.restore();
   }
-  ctx.restore();
+  bctx.globalCompositeOperation = 'source-over';
 
-  for (const b of bokeh) { b.update(); b.draw(); }
+  for (let i = 0; i < bokeh.length; i++) { bokeh[i].update(2); bokeh[i].draw(bctx); }
 
-  const vg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.max(W, H) * 0.78);
-  vg.addColorStop(0, 'rgba(0,0,0,0)');
-  vg.addColorStop(1, 'rgba(190,70,120,0.22)');
-  ctx.fillStyle = vg;
-  ctx.fillRect(0, 0, W, H);
+  bctx.globalAlpha = 1;
+  bctx.fillStyle = vignette;
+  bctx.fillRect(0, 0, W, H);
 }
 
 function drawRipples() {
+  if (!ripples.length) return;
+  ctx.strokeStyle = 'rgba(255,255,255,0.75)';
+  ctx.lineWidth = 2;
   for (let i = ripples.length - 1; i >= 0; i--) {
     const r = ripples[i];
     r.r += 5.5;
     r.a -= 0.012;
     if (r.a <= 0) { ripples.splice(i, 1); continue; }
-    ctx.save();
     ctx.globalAlpha = r.a;
-    ctx.strokeStyle = 'rgba(255,255,255,0.75)';
-    ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2);
     ctx.stroke();
-    ctx.restore();
   }
+  ctx.globalAlpha = 1;
 }
 
 function spawnHeart(x, y, size, vel) {
@@ -638,16 +694,15 @@ function spawnHeart(x, y, size, vel) {
 }
 
 /* ============================================================
-   WEBGL — liquid glass
+   WEBGL — liquid glass (пореgionная загрузка текстуры)
    ============================================================ */
 const VS = 'attribute vec2 a_pos; void main(){ gl_Position = vec4(a_pos, 0.0, 1.0); }';
 
-function buildFS(kernel) {
-  return `
-precision highp float;
+const FS = `
+precision mediump float;
 
-uniform vec2 u_res;
 uniform sampler2D u_bg;
+uniform vec4 u_reg;   // x, y (низ-лево), w, h — область фона в текстуре
 uniform vec4 u_g1;
 uniform vec4 u_g2;
 uniform vec4 u_g3;
@@ -657,7 +712,7 @@ uniform float u_dpr;
 #define LENS_ZONE 0.45
 #define LENS_MAX_PX 60.0
 #define ABERRATION 4.0
-#define BLUR_I 2.2
+#define BLUR_I 3.1
 #define TINT 0.92
 #define SPEC 0.10
 
@@ -667,15 +722,16 @@ float sdRound(vec2 p, vec2 b, float r) {
 }
 
 vec3 getTex(vec2 c) {
-  vec2 uv = clamp(c / u_res, vec2(0.0015), vec2(0.9985));
+  vec2 uv = (c - u_reg.xy) / u_reg.zw;
+  uv = clamp(uv, vec2(0.002), vec2(0.998));
   return texture2D(u_bg, vec2(uv.x, 1.0 - uv.y)).rgb;
 }
 
 vec3 getBlur(vec2 c, float r) {
   vec3 sum = vec3(0.0);
   float wsum = 0.0;
-  for (int x = -${kernel}; x <= ${kernel}; x++) {
-    for (int y = -${kernel}; y <= ${kernel}; y++) {
+  for (int x = -1; x <= 1; x++) {
+    for (int y = -1; y <= 1; y++) {
       float w = exp(-0.5 * float(x * x + y * y) / 2.0);
       sum += getTex(c + vec2(float(x), float(y)) * r) * w;
       wsum += w;
@@ -691,6 +747,8 @@ vec4 glass(vec2 fc, vec4 g, vec3 bgColor, float bgAlpha) {
   vec2 center = g.xy + gsz * 0.5;
   vec2 p = fc - center;
   vec2 hs = gsz * 0.5;
+
+  if (abs(p.x) > hs.x + 2.0 || abs(p.y) > hs.y + 2.0) return vec4(0.0);
 
   float size = min(gsz.x, gsz.y);
   float radius = min(size * 0.5, 34.0 * u_dpr);
@@ -748,16 +806,23 @@ void main() {
   vec4 s3 = glass(fc, u_g3, vec3(0.0), 0.0);
   acc = mix(acc, vec4(s3.rgb, 1.0), s3.a);
 
-  vec4 s4 = glass(fc, u_g4, vec3(1.0), 0.15);
+  vec4 s4 = glass(fc, u_g4, vec3(0.93, 0.10, 0.22), 0.25);
   acc = mix(acc, vec4(s4.rgb, 1.0), s4.a);
 
   gl_FragColor = acc;
 }
 `;
-}
 
-let gl = null, prog = null, tex = null;
-let uRes, uBg, uG1, uG2, uG3, uG4, uDpr;
+let gl = null, prog = null;
+let uBg, uReg, uG1, uG2, uG3, uG4, uDpr;
+
+function makePass() {
+  const cv = document.createElement('canvas');
+  cv.width = 64; cv.height = 64;
+  return { cv, c2d: cv.getContext('2d', { alpha: false }), tex: null, alloc: false };
+}
+const passCards = makePass();
+const passNo = makePass();
 
 function compile(type, src) {
   const sh = gl.createShader(type);
@@ -770,12 +835,30 @@ function compile(type, src) {
   return sh;
 }
 
+function makeTexture() {
+  const t = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  return t;
+}
+
 function initGL() {
-  gl = glassCanvas.getContext('webgl', { alpha: true, premultipliedAlpha: false, antialias: false });
+  gl = glassCanvas.getContext('webgl', {
+    alpha: true,
+    premultipliedAlpha: false,
+    antialias: false,
+    depth: false,
+    stencil: false,
+    powerPreference: 'high-performance',
+    preserveDrawingBuffer: false
+  });
   if (!gl) return false;
 
   const vs = compile(gl.VERTEX_SHADER, VS);
-  const fs = compile(gl.FRAGMENT_SHADER, buildFS(isMobile ? 1 : 2));
+  const fs = compile(gl.FRAGMENT_SHADER, FS);
   if (!vs || !fs) return false;
 
   prog = gl.createProgram();
@@ -795,15 +878,11 @@ function initGL() {
   gl.enableVertexAttribArray(loc);
   gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
 
-  tex = gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D, tex);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  passCards.tex = makeTexture();
+  passNo.tex = makeTexture();
 
-  uRes = gl.getUniformLocation(prog, 'u_res');
   uBg  = gl.getUniformLocation(prog, 'u_bg');
+  uReg = gl.getUniformLocation(prog, 'u_reg');
   uG1  = gl.getUniformLocation(prog, 'u_g1');
   uG2  = gl.getUniformLocation(prog, 'u_g2');
   uG3  = gl.getUniformLocation(prog, 'u_g3');
@@ -812,20 +891,10 @@ function initGL() {
 
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  gl.uniform1i(uBg, 0);
+  gl.uniform1f(uDpr, DPR);
+  gl.clearColor(0, 0, 0, 0);
   return true;
-}
-
-function setGlass(loc, el, visible) {
-  if (!gl) return;
-  if (!el || visible === false) { gl.uniform4f(loc, 0, 0, 0, 0); return; }
-  const style = window.getComputedStyle(el);
-  if (style.display === 'none' || style.visibility === 'hidden' || parseFloat(style.opacity) < 0.05) {
-    gl.uniform4f(loc, 0, 0, 0, 0);
-    return;
-  }
-  const r = el.getBoundingClientRect();
-  if (r.width < 1 || r.height < 1) { gl.uniform4f(loc, 0, 0, 0, 0); return; }
-  gl.uniform4f(loc, r.left * DPR, (window.innerHeight - r.bottom) * DPR, r.width * DPR, r.height * DPR);
 }
 
 const card1 = document.getElementById('card1');
@@ -835,30 +904,102 @@ const btnNo = document.getElementById('btnNo');
 const btnWrapper = document.getElementById('btnWrapper');
 const loveText = document.getElementById('loveText');
 
-function renderGL() {
-  if (!gl) return;
-  gl.viewport(0, 0, glassCanvas.width, glassCanvas.height);
-  gl.clearColor(0, 0, 0, 0);
-  gl.clear(gl.COLOR_BUFFER_BIT);
+let card1Visible = true;
+let card2Visible = false;
 
-  gl.bindTexture(gl.TEXTURE_2D, tex);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, heartCanvas);
+const REG_PAD = 96;
 
-  gl.uniform2f(uRes, glassCanvas.width, glassCanvas.height);
-  gl.uniform1i(uBg, 0);
-  gl.uniform1f(uDpr, DPR);
+function rectOf(el, visible) {
+  if (!visible) return null;
+  const r = el.getBoundingClientRect();
+  return (r.width < 1 || r.height < 1) ? null : r;
+}
 
-  const c1Visible = !card1.classList.contains('fade-out') && window.getComputedStyle(card1).display !== 'none';
-  setGlass(uG1, card1, c1Visible);
-  setGlass(uG2, btnYes, c1Visible);
-  setGlass(uG3, card2, window.getComputedStyle(card2).display !== 'none');
-  setGlass(uG4, btnNo, noVisible);
+function regionFor(rects) {
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (let i = 0; i < rects.length; i++) {
+    const r = rects[i];
+    if (r.left < x0) x0 = r.left;
+    if (r.top < y0) y0 = r.top;
+    if (r.right > x1) x1 = r.right;
+    if (r.bottom > y1) y1 = r.bottom;
+  }
+  x0 = Math.floor(x0 - REG_PAD); y0 = Math.floor(y0 - REG_PAD);
+  x1 = Math.ceil(x1 + REG_PAD);  y1 = Math.ceil(y1 + REG_PAD);
 
+  // размер кратен 64, чтобы текстура не переаллоцировалась каждый кадр
+  let w = Math.min(W, Math.ceil((x1 - x0) / 64) * 64);
+  let h = Math.min(H, Math.ceil((y1 - y0) / 64) * 64);
+  x0 = Math.max(0, Math.min(W - w, x0));
+  y0 = Math.max(0, Math.min(H - h, y0));
+  return { x: x0, y: y0, w, h };
+}
+
+function runPass(pass, region, g1, g2, g3, g4) {
+  const dw = Math.round(region.w * DPR);
+  const dh = Math.round(region.h * DPR);
+  if (dw < 2 || dh < 2) return;
+
+  if (pass.cv.width !== dw || pass.cv.height !== dh) {
+    pass.cv.width = dw;
+    pass.cv.height = dh;
+    pass.alloc = false;
+  }
+
+  // копируем в GPU только область под панелью, а не весь экран
+  pass.c2d.drawImage(
+    heartCanvas,
+    Math.round(region.x * DPR), Math.round(region.y * DPR), dw, dh,
+    0, 0, dw, dh
+  );
+
+  gl.bindTexture(gl.TEXTURE_2D, pass.tex);
+  if (!pass.alloc) {
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, pass.cv);
+    pass.alloc = true;
+  } else {
+    gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, pass.cv);
+  }
+
+  const gx = Math.round(region.x * DPR);
+  const gy = Math.round((H - region.y - region.h) * DPR);
+
+  gl.uniform4f(uReg, gx, gy, dw, dh);
+  gl.uniform4f(uG1, g1 ? g1.left * DPR : 0, g1 ? (H - g1.bottom) * DPR : 0, g1 ? g1.width * DPR : 0, g1 ? g1.height * DPR : 0);
+  gl.uniform4f(uG2, g2 ? g2.left * DPR : 0, g2 ? (H - g2.bottom) * DPR : 0, g2 ? g2.width * DPR : 0, g2 ? g2.height * DPR : 0);
+  gl.uniform4f(uG3, g3 ? g3.left * DPR : 0, g3 ? (H - g3.bottom) * DPR : 0, g3 ? g3.width * DPR : 0, g3 ? g3.height * DPR : 0);
+  gl.uniform4f(uG4, g4 ? g4.left * DPR : 0, g4 ? (H - g4.bottom) * DPR : 0, g4 ? g4.width * DPR : 0, g4 ? g4.height * DPR : 0);
+
+  // ножницы: фрагменты вне области даже не запускают шейдер
+  gl.scissor(gx, gy, dw, dh);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 }
 
+function renderGL() {
+  if (!gl) return;
+
+  gl.disable(gl.SCISSOR_TEST);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.enable(gl.SCISSOR_TEST);
+
+  const r1 = rectOf(card1, card1Visible);
+  const r2 = rectOf(btnYes, card1Visible);
+  const r3 = rectOf(card2, card2Visible);
+  const r4 = rectOf(btnNo, noVisible);
+
+  const main = [];
+  if (r1) main.push(r1);
+  if (r2) main.push(r2);
+  if (r3) main.push(r3);
+  if (main.length) runPass(passCards, regionFor(main), r1, r2, r3, null);
+
+  if (r4) runPass(passNo, regionFor([r4]), null, null, null, r4);
+
+  gl.disable(gl.SCISSOR_TEST);
+}
+
 /* ============================================================
-   ТЕКСТ ПО БУКВАМ + РАСЩЕПЛЕНИЕ
+   ТЕКСТ ПО БУКВАМ
    ============================================================ */
 const loveMessage = 'Я тебя тоже безумно сильно люблю, Лизочка. Ты самое лучшее, что случалось со мной! Будь всегда рядом. ❤️';
 
@@ -876,7 +1017,32 @@ function wrapLetters(text) {
   }).join(' ');
 }
 
-/* буква разлетается на 5 осколков по случайным линиям разлома */
+/* подсветка буквы под курсором ИЛИ под пальцем */
+let hotLetter = null;
+let lastHotProbe = 0;
+
+function setHotLetter(el) {
+  const next = (el && el.classList && el.classList.contains('letter') && !el.classList.contains('gone')) ? el : null;
+  if (next === hotLetter) return;
+  if (hotLetter) hotLetter.classList.remove('hot');
+  hotLetter = next;
+  if (hotLetter) {
+    hotLetter.classList.add('hot');
+    const r = hotLetter.getBoundingClientRect();
+    sfx.hover(r.left + r.width / 2);
+  }
+}
+
+loveText.addEventListener('mousemove', e => setHotLetter(e.target));
+loveText.addEventListener('mouseleave', () => setHotLetter(null));
+
+function probeTouch(x, y) {
+  const now = performance.now();
+  if (now - lastHotProbe < 32) return;   // не чаще ~30 раз в секунду
+  lastHotProbe = now;
+  setHotLetter(document.elementFromPoint(x, y));
+}
+
 function shatterLetter(el) {
   const r = el.getBoundingClientRect();
   const cs = window.getComputedStyle(el);
@@ -889,11 +1055,13 @@ function shatterLetter(el) {
     'polygon(0% 100%, 52% 74%, 100% 78%, 100% 100%)'
   ];
 
+  const frag = document.createDocumentFragment();
+  const nodes = [];
+
   clips.forEach((clip, i) => {
     const sh = document.createElement('span');
     sh.className = 'shard';
     sh.textContent = el.textContent;
-
     sh.style.left = r.left + 'px';
     sh.style.top = r.top + 'px';
     sh.style.width = r.width + 'px';
@@ -906,9 +1074,13 @@ function shatterLetter(el) {
     sh.style.textShadow = '0 0 12px rgba(255,255,255,0.85), 0 0 24px rgba(255,110,175,0.7)';
     sh.style.clipPath = clip;
     sh.style.webkitClipPath = clip;
+    frag.appendChild(sh);
+    nodes.push({ sh, i });
+  });
 
-    document.body.appendChild(sh);
+  document.body.appendChild(frag);
 
+  nodes.forEach(({ sh, i }) => {
     const ang = (i / clips.length) * Math.PI * 2 + (Math.random() - 0.5) * 0.9;
     const dist = 55 + Math.random() * 70;
     const dx = Math.cos(ang) * dist;
@@ -917,13 +1089,10 @@ function shatterLetter(el) {
     const dur = 1500 + Math.random() * 500;
 
     const anim = sh.animate([
-      // трещина: осколки чуть расходятся и замирают
       { transform: 'translate(0px, 0px) rotate(0deg) scale(1)', opacity: 1, filter: 'blur(0px)', offset: 0 },
       { transform: `translate(${dx * 0.10}px, ${dy * 0.10}px) rotate(${spin * 0.05}deg) scale(1.14)`, opacity: 1, filter: 'blur(0px)', offset: 0.14 },
       { transform: `translate(${dx * 0.12}px, ${dy * 0.12}px) rotate(${spin * 0.07}deg) scale(1.10)`, opacity: 1, offset: 0.24 },
-      // разлёт вверх
       { transform: `translate(${dx * 0.65}px, ${dy * 0.65 - 26}px) rotate(${spin * 0.5}deg) scale(0.95)`, opacity: 0.95, filter: 'blur(0px)', offset: 0.55 },
-      // падение и растворение
       { transform: `translate(${dx}px, ${dy + 90}px) rotate(${spin}deg) scale(0.4)`, opacity: 0, filter: 'blur(3px)', offset: 1 }
     ], {
       duration: dur,
@@ -937,20 +1106,20 @@ function shatterLetter(el) {
   });
 }
 
-loveText.addEventListener('click', e => {
-  const el = e.target;
-  if (!el.classList.contains('letter') || el.classList.contains('gone')) return;
+function popLetter(el) {
+  if (!el || !el.classList.contains('letter') || el.classList.contains('gone')) return;
 
-  sfx.unlock();
   const r = el.getBoundingClientRect();
   const cx = r.left + r.width / 2;
   const cy = r.top + r.height / 2;
+
+  if (hotLetter === el) { el.classList.remove('hot'); hotLetter = null; }
 
   sfx.letter(cx);
   shatterLetter(el);
   el.classList.add('gone');
 
-  for (let i = 0; i < 12; i++) particles.push(new SparkParticle(cx, cy, 335 + Math.random() * 35));
+  for (let i = 0; i < 12; i++) addSpark(cx, cy, 335 + Math.random() * 35);
   ripples.push({ x: cx, y: cy, r: 4, a: 0.35 });
   spawnHeart(cx, cy, (isMobile ? 12 : 18) + Math.random() * 10, {
     vx: (Math.random() - 0.5) * 2.5,
@@ -966,10 +1135,12 @@ loveText.addEventListener('click', e => {
     el.classList.remove('gone');
     el.classList.add(v);
     sfx.restore(bx);
-    for (let i = 0; i < 7; i++) particles.push(new SparkParticle(bx, by, 45 + Math.random() * 20));
+    for (let i = 0; i < 7; i++) addSpark(bx, by, 45 + Math.random() * 20);
     setTimeout(() => el.classList.remove(v), 1050);
   }, 3400 + Math.random() * 2200);
-});
+}
+
+loveText.addEventListener('click', e => popLetter(e.target));
 
 /* ============================================================
    КНОПКИ
@@ -993,13 +1164,11 @@ function flipMove(el, beforeRect, duration = 420) {
 
 function detachNoButton() {
   if (noButtonRunning) return;
-
   const r = btnNo.getBoundingClientRect();
   const yesBefore = btnYes.getBoundingClientRect();
 
   document.body.appendChild(btnNo);
 
-  // стартовая позиция без анимации
   btnNo.classList.add('instant');
   btnNo.style.position = 'fixed';
   btnNo.style.margin = '0';
@@ -1007,12 +1176,10 @@ function detachNoButton() {
   btnNo.style.left = r.left + 'px';
   btnNo.style.top = r.top + 'px';
 
-  // принудительный reflow фиксирует стартовое значение для transition
   void btnNo.offsetWidth;
   btnNo.classList.remove('instant');
   void btnNo.offsetWidth;
 
-  // «Да» плавно переезжает в центр освободившегося ряда
   flipMove(btnYes, yesBefore);
 
   noPos = { x: r.left, y: r.top };
@@ -1023,20 +1190,19 @@ function obstacleRects() {
   const out = [];
   const push = el => {
     if (!el) return;
-    const st = window.getComputedStyle(el);
-    if (st.display === 'none' || st.visibility === 'hidden') return;
     const r = el.getBoundingClientRect();
     if (r.width > 1 && r.height > 1) out.push(r);
   };
-  push(card1.style.display === 'none' ? null : card1);
-  push(window.getComputedStyle(card2).display === 'none' ? null : card2);
+  push(card1Visible ? card1 : null);
+  push(card2Visible ? card2 : null);
   push(document.getElementById('soundToggle'));
   return out;
 }
 
 function overlapArea(x, y, w, h, rects, gap) {
   let total = 0;
-  for (const r of rects) {
+  for (let i = 0; i < rects.length; i++) {
+    const r = rects[i];
     const ox = Math.min(x + w, r.right + gap) - Math.max(x, r.left - gap);
     const oy = Math.min(y + h, r.bottom + gap) - Math.max(y, r.top - gap);
     if (ox > 0 && oy > 0) total += ox * oy;
@@ -1069,7 +1235,6 @@ function moveNoButton(px, py) {
 
   let best = null, bestScore = -Infinity;
 
-  // сначала ищем рядом, потом при неудаче расширяем кольцо
   for (let ring = 0; ring < 3; ring++) {
     const lo = minD + ring * 45;
     const hi = maxD + ring * 90;
@@ -1104,7 +1269,7 @@ function moveNoButton(px, py) {
   btnNo.style.left = noPos.x + 'px';
   btnNo.style.top = noPos.y + 'px';
 
-  for (let i = 0; i < 9; i++) particles.push(new SparkParticle(curCx, curCy, 350));
+  for (let i = 0; i < 9; i++) addSpark(curCx, curCy, 350);
   ripples.push({ x: curCx, y: curCy, r: 6, a: 0.35 });
   sfx.no(curCx);
 }
@@ -1130,7 +1295,6 @@ btnNo.addEventListener('mouseenter', noEscape);
 btnNo.addEventListener('touchstart', noEscape, { passive: false });
 
 btnYes.addEventListener('click', () => {
-  sfx.unlock();
   sfx.yes();
 
   const r = btnYes.getBoundingClientRect();
@@ -1145,21 +1309,23 @@ btnYes.addEventListener('click', () => {
       vy: Math.sin(a) * s - 1.5
     });
   }
-  for (let i = 0; i < 30; i++) particles.push(new SparkParticle(cx, cy, 340 + Math.random() * 40));
+  for (let i = 0; i < 30; i++) addSpark(cx, cy, 340 + Math.random() * 40);
   ripples.push({ x: cx, y: cy, r: 10, a: 0.6 });
 
   const yesBefore = btnYes.getBoundingClientRect();
   noVisible = false;
   btnNo.style.display = 'none';
   flipMove(btnYes, yesBefore, 320);
-  
+
   card1.classList.remove('floating');
   card1.classList.add('fade-out');
+  card1Visible = false;
 
   setTimeout(() => {
     card1.style.display = 'none';
     card2.style.display = 'block';
     card2.classList.add('fade-in');
+    card2Visible = true;
     loveText.innerHTML = wrapLetters(loveMessage);
     isInteractive = true;
 
@@ -1171,25 +1337,37 @@ btnYes.addEventListener('click', () => {
 });
 
 /* ============================================================
-   УКАЗАТЕЛЬ И ВЗАИМОДЕЙСТВИЕ
+   УКАЗАТЕЛЬ
    ============================================================ */
 function onPointerMove(x, y) {
   pointer.x = x; pointer.y = y; pointer.active = true;
-  if (Math.random() < 0.22) particles.push(new SparkParticle(x, y, 340 + Math.random() * 40));
+  if (Math.random() < 0.22) addSpark(x, y, 340 + Math.random() * 40);
 }
 
-window.addEventListener('mousemove', e => onPointerMove(e.clientX, e.clientY));
+window.addEventListener('mousemove', e => onPointerMove(e.clientX, e.clientY), { passive: true });
 window.addEventListener('mouseleave', () => { pointer.active = false; });
+
 window.addEventListener('touchmove', e => {
   const t = e.touches[0];
-  if (t) onPointerMove(t.clientX, t.clientY);
+  if (!t) return;
+  onPointerMove(t.clientX, t.clientY);
+  probeTouch(t.clientX, t.clientY);   // подсвечиваем букву под пальцем
 }, { passive: true });
-window.addEventListener('touchend', () => { pointer.active = false; });
+
+window.addEventListener('touchstart', e => {
+  const t = e.touches[0];
+  if (t) probeTouch(t.clientX, t.clientY);
+}, { passive: true });
+
+window.addEventListener('touchend', () => {
+  pointer.active = false;
+  setHotLetter(null);
+});
+window.addEventListener('touchcancel', () => setHotLetter(null));
 
 function handleInteract(cx, cy) {
-  sfx.unlock();
   ripples.push({ x: cx, y: cy, r: 6, a: 0.45 });
-  for (let i = 0; i < 6; i++) particles.push(new SparkParticle(cx, cy, 340 + Math.random() * 40));
+  for (let i = 0; i < 6; i++) addSpark(cx, cy, 340 + Math.random() * 40);
 
   if (isInteractive) {
     for (let i = hearts.length - 1; i >= 0; i--) {
@@ -1197,7 +1375,7 @@ function handleInteract(cx, cy) {
         const parts = hearts[i].split();
         sfx.split(cx);
         hearts.splice(i, 1);
-        hearts.push(...parts);
+        for (let j = 0; j < parts.length; j++) hearts.push(parts[j]);
         return;
       }
     }
@@ -1221,7 +1399,6 @@ soundToggle.addEventListener('click', e => {
   if (!m) sfx.tap(window.innerWidth * 0.9);
 });
 
-// capture: true — чтобы сработать раньше stopPropagation в обработчике кнопки «Нет»
 ['pointerdown', 'touchstart', 'keydown'].forEach(ev =>
   window.addEventListener(ev, () => sfx.arm(), { capture: true, passive: true })
 );
@@ -1229,24 +1406,37 @@ soundToggle.addEventListener('click', e => {
 /* ============================================================
    РЕСАЙЗ И ЦИКЛ
    ============================================================ */
+let resizeTimer = null;
+
 function resize() {
-  DPR = Math.min(window.devicePixelRatio || 1, 2);
   W = window.innerWidth;
   H = window.innerHeight;
   isMobile = Math.min(W, H) < 700;
 
-  heartCanvas.width = W * DPR;
-  heartCanvas.height = H * DPR;
+  heartCanvas.width = Math.round(W * DPR);
+  heartCanvas.height = Math.round(H * DPR);
   heartCanvas.style.width = W + 'px';
   heartCanvas.style.height = H + 'px';
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.imageSmoothingEnabled = true;
 
-  glassCanvas.width = W * DPR;
-  glassCanvas.height = H * DPR;
+  bgCanvas.width = Math.max(2, Math.round(W * DPR * BG_SCALE));
+  bgCanvas.height = Math.max(2, Math.round(H * DPR * BG_SCALE));
+  bctx.setTransform(DPR * BG_SCALE, 0, 0, DPR * BG_SCALE, 0, 0);
+
+  glassCanvas.width = heartCanvas.width;
+  glassCanvas.height = heartCanvas.height;
   glassCanvas.style.width = W + 'px';
   glassCanvas.style.height = H + 'px';
 
-  // кнопку «Нет» возвращаем в пределы нового вьюпорта
+  if (gl) {
+    gl.viewport(0, 0, glassCanvas.width, glassCanvas.height);
+    passCards.alloc = false;
+    passNo.alloc = false;
+  }
+
+  heartSprites.clear();
+
   if (noButtonRunning && noPos) {
     const bw = btnNo.offsetWidth, bh = btnNo.offsetHeight, pad = 12;
     noPos.x = Math.max(pad, Math.min(W - bw - pad, noPos.x));
@@ -1258,33 +1448,59 @@ function resize() {
   makeScenery();
 }
 
-window.addEventListener('resize', resize);
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(resize, 120);
+});
+
+let frameParity = 0;
+let slowFrames = 0, glassEveryOther = false, lastTime = 0;
 
 function animate(time) {
-  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-  drawBackground(time);
+  requestAnimationFrame(animate);
+
+  const dt = time - lastTime;
+  lastTime = time;
+  if (dt > 26 && dt < 500) {
+    if (++slowFrames > 45) { glassEveryOther = true; slowFrames = 0; }
+  } else if (slowFrames > 0) {
+    slowFrames--;
+  }
+
+  frameParity ^= 1;
+
+  // мягкий фон обновляется через кадр — он и так меняется очень медленно
+  if (frameParity === 0) paintBackgroundLayer(time);
+  ctx.drawImage(bgCanvas, 0, 0, W, H);
 
   if (time - lastSpawn > 2600) {
-    spawnHeart();
+    if (hearts.length < AUTOSPAWN_CAP) spawnHeart();
     lastSpawn = time;
   }
 
-  for (const h of hearts) { h.update(); h.draw(); }
+  for (let i = 0; i < hearts.length; i++) { hearts[i].update(1); hearts[i].draw(ctx); }
+  ctx.globalAlpha = 1;
 
   for (let i = particles.length - 1; i >= 0; i--) {
-    particles[i].update();
-    particles[i].draw();
-    if (particles[i].life <= 0) particles.splice(i, 1);
+    const p = particles[i];
+    p.update();
+    p.draw();
+    if (p.life <= 0) {
+      particles.splice(i, 1);
+      if (sparkPool.length < 200) sparkPool.push(p);
+    }
   }
+  ctx.globalAlpha = 1;
 
   drawRipples();
-  renderGL();
 
-  requestAnimationFrame(animate);
+  if (!glassEveryOther || frameParity === 0) renderGL();
 }
 
 resize();
 initGL();
+resize();
+paintBackgroundLayer(0);
 
 for (let i = 0; i < (isMobile ? 8 : 16); i++) spawnHeart();
 
