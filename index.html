@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Для тебя 💕</title>
+<link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@500;700&family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+body, html {
+  width: 100%; height: 100%; overflow: hidden;
+  font-family: 'Nunito', sans-serif;
+  background: #ff9a9e;
+  display: flex; justify-content: center; align-items: center;
+}
+#heartCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+#glassCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; }
+.card {
+  position: relative; z-index: 10;
+  background: transparent; border: none;
+  border-radius: 32px; padding: 40px 30px;
+  text-align: center; max-width: 90%; width: 440px;
+}
+.title {
+  font-family: 'Comfortaa', cursive;
+  font-size: 2rem; font-weight: 700;
+  color: #7a1c43; margin-bottom: 30px;
+  text-shadow: 0 2px 10px rgba(255,255,255,0.8);
+  line-height: 1.4;
+}
+.buttons-container { display: flex; justify-content: center; align-items: center; gap: 20px; min-height: 60px; }
+.btn {
+  padding: 14px 32px; font-size: 1.2rem; font-weight: 800;
+  border: none; border-radius: 50px;
+  cursor: pointer; outline: none; background: transparent;
+  transition: transform 0.2s ease;
+}
+.btn-yes { color: white; }
+.btn-yes:hover { transform: scale(1.08); }
+.btn-no { color: #fff; z-index: 100; text-shadow: 0 1px 6px rgba(120,0,25,0.55); }
+#card2 { display: none; opacity: 0; position: absolute; top: 0; left: 0; right: 0; bottom: 0; margin: auto; width: 440px; max-width: 90%; height: fit-content; }
+.love-text { font-size: 1.35rem; color: #63002b; font-weight: 800; line-height: 1.8; }
+.love-text .letter { display: inline-block; cursor: pointer; transition: transform 0.2s ease, color 0.2s ease; }
+.love-text .letter:hover { transform: scale(1.3); color: #ff416c; }
+.love-text .letter.space { width: 0.3em; }
+.love-text .letter.burst { animation: letterBurst 0.5s ease forwards; pointer-events: none; }
+@keyframes letterBurst {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(2); opacity: 0.5; color: #ff416c; }
+  100% { transform: scale(0); opacity: 0; }
+}
+.hint { margin-top: 20px; font-size: 0.9rem; color: #aa3d6c; opacity: 0.9; font-style: italic; }
+.fade-out { opacity: 0 !important; transform: scale(0.7) translateY(-30px) !important; }
+.fade-in { display: block !important; animation: smoothAppear 1s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+@keyframes smoothAppear {
+  from { opacity: 0; transform: scale(0.8) translateY(30px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+</style>
+</head>
+<body>
+<canvas id="heartCanvas"></canvas>
+<canvas id="glassCanvas"></canvas>
+
+<div class="card" id="card1">
+  <h1 class="title">Ты меня любишь? 💕</h1>
+  <div class="buttons-container" id="btnWrapper">
+    <button class="btn btn-yes" id="btnYes">Да</button>
+    <button class="btn btn-no" id="btnNo">Нет</button>
+  </div>
+</div>
+
+<div class="card" id="card2">
+  <p class="love-text" id="loveText"></p>
+  <p class="hint">Нажимай на буквы, чтобы создавать сердечки!</p>
+</div>
+
+<script>
+const btnYes = document.getElementById('btnYes');
+const btnNo = document.getElementById('btnNo');
+const btnWrapper = document.getElementById('btnWrapper');
+const card1 = document.getElementById('card1');
+const card2 = document.getElementById('card2');
+const loveText = document.getElementById('loveText');
+const canvas = document.getElementById('heartCanvas');
+const ctx = canvas.getContext('2d');
+
+const loveMessage = 'Я тебя тоже безумно сильно люблю, котеночек. Ты самое лучшее, что случалось со мной! Будь всегда рядом. </3';
+
+function wrapLetters(text) {
+  let html = '';
+  for (const ch of text) {
+    if (ch === ' ') html += '<span class="letter space"> </span>';
+    else html += `<span class="letter">${ch}</span>`;
+  }
+  loveText.innerHTML = html;
+}
+
+loveText.addEventListener('click', (e) => {
+  const letter = e.target.closest('.letter:not(.space)');
+  if (!letter || letter.classList.contains('burst')) return;
+  const rect = letter.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  letter.classList.add('burst');
+  const h = new Heart3D(cx, cy, 20);
+  h.vx = (Math.random() - 0.5) * 2;
+  h.vy = -Math.random() * 2 - 1;
+  hearts.push(h);
+  for (let i = 0; i < 8; i++) particles.push(new SparkParticle(cx, cy, 350));
+  setTimeout(() => { letter.style.visibility = 'hidden'; }, 500);
+});
+
+let W, H;
+let hearts = [];
+let particles = [];
+let isInteractive = false;
+let noVisible = true;
+
+function resize() {
+  W = canvas.width = glassCanvas.width = window.innerWidth;
+  H = canvas.height = glassCanvas.height = window.innerHeight;
+  if (gl) gl.viewport(0, 0, W, H);
+}
+window.addEventListener('resize', resize);
+
+let noButtonRunning = false, btnW = 0, btnH = 0;
+
+function moveNoButton() {
+  if (!noButtonRunning) {
+    const rect = btnNo.getBoundingClientRect();
+    btnW = rect.width; btnH = rect.height;
+    btnWrapper.style.width = btnWrapper.offsetWidth + 'px';
+    document.body.appendChild(btnNo);
+    btnNo.style.position = 'fixed';
+    btnNo.style.left = rect.left + 'px';
+    btnNo.style.top = rect.top + 'px';
+    noButtonRunning = true;
+    return;
+  }
+  requestAnimationFrame(() => {
+    btnNo.style.transition = 'left 0.3s cubic-bezier(0.25,0.46,0.45,0.94), top 0.3s cubic-bezier(0.25,0.46,0.45,0.94)';
+    const pad = 10;
+    btnNo.style.left = Math.round(pad + Math.random() * Math.max(0, W - btnW - pad)) + 'px';
+    btnNo.style.top = Math.round(pad + Math.random() * Math.max(0, H - btnH - pad)) + 'px';
+  });
+}
+btnNo.addEventListener('mouseenter', moveNoButton);
+btnNo.addEventListener('touchstart', e => { e.preventDefault(); moveNoButton(); });
+btnNo.addEventListener('click', e => { e.preventDefault(); moveNoButton(); });
+
+// ==================== WebGL Liquid Glass ====================
+const glassCanvas = document.getElementById('glassCanvas');
+let gl, program, bgTex, uRes, uBg;
+let uG1, uG2, uG3, uG4;
+let ready = false;
+
+const VS = 'attribute vec2 a_pos; void main(){gl_Position=vec4(a_pos,0,1);}';
+
+const FS = `
+precision highp float;
+
+uniform vec2 u_res;
+uniform sampler2D u_bg;
+uniform vec4 u_g1;
+uniform vec4 u_g2;
+uniform vec4 u_g3;
+uniform vec4 u_g4;
+
+#define LENS_ZONE   0.32   // ширина линзового кольца, доля min(w,h)
+#define LENS_MAX_PX 56.0   // потолок кольца в пикселях
+#define ABERRATION  3.5    // хроматическая аберрация, px
+#define BLUR_I      2.2    // сила блюра
+#define TINT        0.92   // общая тонировка стекла
+#define SPEC        0.10   // яркость грани
+
+vec3 getTex(vec2 c){
+  vec2 uv = clamp(c / u_res, vec2(0.0015), vec2(0.9985));
+  return texture2D(u_bg, vec2(uv.x, 1.0 - uv.y)).rgb;
+}
+
+// гауссово ядро 5x5
+vec3 getBlurred(vec2 coord, float r){
+  vec3 col = vec3(0.0);
+  float tw = 0.0;
+  for (int x = -2; x <= 2; x++){
+    for (int y = -2; y <= 2; y++){
+      vec2 o = vec2(float(x), float(y)) * r;
+      float w = exp(-0.5 * float(x*x + y*y) / 2.0);
+      col += getTex(coord + o) * w;
+      tw  += w;
+    }
+  }
+  return col / tw;
+}
+
+float sdf(vec2 p, vec2 b, float r){
+  vec2 d = abs(p) - b + vec2(r);
+  return min(max(d.x, d.y), 0.0) + length(max(d, 0.0)) - r;
+}
+
+vec2 sdfNormal(vec2 p, vec2 b, float r){
+  vec2 e = vec2(1.0, 0.0);
+  vec2 g = vec2(
+    sdf(p + e.xy, b, r) - sdf(p - e.xy, b, r),
+    sdf(p + e.yx, b, r) - sdf(p - e.yx, b, r)
+  );
+  float l = length(g);
+  return l > 0.0001 ? g / l : vec2(0.0);
+}
+
+// tintColor / tintAmt — цветное стекло (tintAmt = 0.0 -> обычное прозрачное)
+vec4 glass(vec2 fc, vec4 g, vec3 tintColor, float tintAmt){
+  vec2 gsz = g.zw;
+  if (gsz.x < 1.0) return vec4(0.0);
+
+  vec2  gc     = fc - g.xy;
+  vec2  b      = gsz * 0.5;
+  float size   = min(gsz.x, gsz.y);
+  float radius = min(size * 0.5, 34.0);
+
+  float d    = sdf(gc, b, radius);
+  float mask = 1.0 - smoothstep(-1.0, 1.0, d);
+  if (mask <= 0.002) return vec4(0.0);
+
+  float depth = max(-d, 0.0);               // расстояние до кромки, px
+  vec2  n     = sdfNormal(gc, b, radius);   // нормаль наружу
+
+  float band = min(size * LENS_ZONE, LENS_MAX_PX);
+  float t    = clamp(depth / band, 0.0, 1.0);
+  float distFromCenter = 1.0 - t;
+
+  // профиль линзы 1 - sqrt(1 - x^2)
+  float distortion = 1.0 - sqrt(1.0 - distFromCenter * distFromCenter);
+
+  // смещение наружу, не больше ширины кольца -> ничего не пропадает под кромкой
+  vec2 offset = distortion * n * band;
+  vec2 cc     = fc + offset;
+
+  float blurRadius = BLUR_I * (1.0 - distFromCenter * 0.5);
+  vec2  shift = n * ABERRATION * (0.2 + 0.8 * distFromCenter);
+
+  vec3 col = vec3(
+    getBlurred(cc - shift, blurRadius).r,
+    getBlurred(cc,         blurRadius).g,
+    getBlurred(cc + shift, blurRadius).b
+  );
+
+  col *= TINT;
+
+  // цветное стекло: тон от tintColor, яркость и детали — от фона
+  if (tintAmt > 0.001){
+    float lum = dot(col, vec3(0.299, 0.587, 0.114));
+
+    vec3 tinted = tintColor * (0.22 + 1.10 * lum);   // светимость фона переносится в тон
+    tinted += (col - vec3(lum)) * 0.55;              // часть исходного цвета обратно
+
+    float amt = tintAmt * (0.45 + 0.55 * t);         // у кромки тонировка слабее
+    col = mix(col, tinted, amt);
+  }
+
+  // мягкая грань: свет сверху-слева, лёгкая тень снизу-справа
+  float rim = smoothstep(2.5, 0.0, depth);
+  float ndl = dot(n, normalize(vec2(-0.5, 0.86)));
+  col += rim * pow(max(ndl, 0.0), 1.5) * SPEC * (1.0 + tintAmt);
+  col *= 1.0 - rim * max(-ndl, 0.0) * 0.08;
+
+  return vec4(col, mask);
+}
+
+void main(){
+  vec2 fc = gl_FragCoord.xy;
+  vec3 c  = getTex(fc);
+
+  vec4 s1 = glass(fc, u_g1, vec3(1.0), 0.0);               // карточка 1
+  c = mix(c, s1.rgb, s1.a);
+
+  vec4 s2 = glass(fc, u_g2, vec3(1.0), 0.0);               // кнопка "Да"
+  c = mix(c, s2.rgb, s2.a);
+
+  vec4 s3 = glass(fc, u_g3, vec3(1.0), 0.0);               // карточка 2
+  c = mix(c, s3.rgb, s3.a);
+
+  vec4 s4 = glass(fc, u_g4, vec3(1.0, 0.22, 0.32), 0.50);  // кнопка "Нет" — красное стекло
+  c = mix(c, s4.rgb, s4.a);
+
+  gl_FragColor = vec4(c, 1.0);
+}
+`;
+
+function initGL() {
+  gl = glassCanvas.getContext('webgl', { alpha: false, antialias: false, premultipliedAlpha: false })
+    || glassCanvas.getContext('experimental-webgl');
+  if (!gl) { console.error('No WebGL'); return; }
+
+  function mk(type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+      console.error('Shader compile error:', gl.getShaderInfoLog(s));
+      return null;
+    }
+    return s;
+  }
+
+  const vs = mk(gl.VERTEX_SHADER, VS);
+  const fs = mk(gl.FRAGMENT_SHADER, FS);
+  if (!vs || !fs) return;
+
+  program = gl.createProgram();
+  gl.attachShader(program, vs);
+  gl.attachShader(program, fs);
+  gl.linkProgram(program);
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    console.error('Link error:', gl.getProgramInfoLog(program));
+    return;
+  }
+  gl.useProgram(program);
+
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,1,1]), gl.STATIC_DRAW);
+  const loc = gl.getAttribLocation(program, 'a_pos');
+  gl.enableVertexAttribArray(loc);
+  gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+
+  uRes = gl.getUniformLocation(program, 'u_res');
+  uBg  = gl.getUniformLocation(program, 'u_bg');
+  uG1  = gl.getUniformLocation(program, 'u_g1');
+  uG2  = gl.getUniformLocation(program, 'u_g2');
+  uG3  = gl.getUniformLocation(program, 'u_g3');
+  uG4  = gl.getUniformLocation(program, 'u_g4');
+
+  bgTex = gl.createTexture();
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, bgTex);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+  ready = true;
+}
+
+function setGlass(loc, rect, visible) {
+  const ok = visible && rect.width > 1 && rect.height > 1;
+  gl.uniform4f(
+    loc,
+    ok ? rect.left + rect.width / 2 : -9999,
+    ok ? H - rect.top - rect.height / 2 : -9999,
+    ok ? rect.width : -1,
+    ok ? rect.height : -1
+  );
+}
+
+function renderGL() {
+  if (!ready) return;
+  gl.viewport(0, 0, W, H);
+  gl.useProgram(program);
+
+  gl.bindTexture(gl.TEXTURE_2D, bgTex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
+  gl.uniform1i(uBg, 0);
+  gl.uniform2f(uRes, W, H);
+
+  const c1vis = card1.style.display !== 'none' && !card1.classList.contains('fade-out');
+  const c2vis = card2.classList.contains('fade-in');
+
+  setGlass(uG1, card1.getBoundingClientRect(), c1vis);
+  setGlass(uG2, btnYes.getBoundingClientRect(), c1vis);
+  setGlass(uG3, card2.getBoundingClientRect(), c2vis);
+  setGlass(uG4, btnNo.getBoundingClientRect(), noVisible);
+
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+}
+
+resize();
+initGL();
+
+// ==================== Hearts ====================
+class Heart3D {
+  constructor(x, y, sz) {
+    this.x = x ?? Math.random() * W;
+    this.y = y ?? H + Math.random() * 100;
+    this.size = sz ?? Math.random() * 25 + 20;
+    this.vx = (Math.random() - 0.5) * 0.8;
+    this.vy = -Math.random() * 0.8 - 0.4;
+    const h = [340, 350, 0, 10];
+    this.hue = h[Math.floor(Math.random() * h.length)];
+    this.l = Math.floor(Math.random() * 20) + 55;
+    this.color = `hsl(${this.hue},100%,${this.l}%)`;
+  }
+  update() {
+    this.x += this.vx; this.y += this.vy;
+    if (this.x < -this.size) { this.x = -this.size; this.vx *= -1; }
+    if (this.x > W + this.size) { this.x = W + this.size; this.vx *= -1; }
+    if (this.y < -this.size) { this.y = -this.size; this.vy *= -1; }
+    if (this.y > H + this.size) { this.y = H + this.size; this.vy *= -1; }
+  }
+  draw() {
+    ctx.save(); ctx.translate(this.x, this.y);
+    ctx.fillStyle = this.color;
+    ctx.shadowColor = `hsl(${this.hue},100%,70%)`;
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    const d = this.size;
+    ctx.moveTo(0, -d * 0.3);
+    ctx.bezierCurveTo(-d * 0.5, -d * 0.8, -d, -d * 0.2, 0, d * 0.6);
+    ctx.bezierCurveTo(d, -d * 0.2, d * 0.5, -d * 0.8, 0, -d * 0.3);
+    ctx.closePath(); ctx.fill(); ctx.restore();
+  }
+  isClicked(mx, my) {
+    const dx = this.x - mx, dy = this.y - my;
+    return Math.sqrt(dx * dx + dy * dy) < this.size * 1.2;
+  }
+  split() {
+    const n = 3 + Math.floor(Math.random() * 2), ns = this.size * 0.6;
+    for (let i = 0; i < 10; i++) particles.push(new SparkParticle(this.x, this.y, this.hue));
+    if (ns < 5) return [];
+    const arr = [];
+    for (let i = 0; i < n; i++) {
+      const h = new Heart3D(this.x, this.y, ns);
+      h.vx = (Math.random() - 0.5) * 2;
+      h.vy = (Math.random() - 0.5) * 2 - 0.5;
+      arr.push(h);
+    }
+    return arr;
+  }
+}
+
+class SparkParticle {
+  constructor(x, y, hue) {
+    this.x = x; this.y = y;
+    this.vx = (Math.random() - 0.5) * 8;
+    this.vy = (Math.random() - 0.5) * 8;
+    this.life = 1;
+    this.decay = Math.random() * 0.03 + 0.02;
+    this.size = Math.random() * 4 + 2;
+    this.color = `hsl(${hue},100%,70%)`;
+  }
+  update() { this.x += this.vx; this.y += this.vy; this.life -= this.decay; }
+  draw() {
+    ctx.save(); ctx.globalAlpha = Math.max(0, this.life);
+    ctx.fillStyle = this.color;
+    ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fill(); ctx.restore();
+  }
+}
+
+// ==================== Animate ====================
+function animate() {
+  const grad = ctx.createLinearGradient(0, 0, W, H);
+  grad.addColorStop(0, '#ff9a9e'); grad.addColorStop(0.5, '#fecfef'); grad.addColorStop(1, '#feada6');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  for (let i = hearts.length - 1; i >= 0; i--) { hearts[i].update(); hearts[i].draw(); }
+
+  for (let i = 0; i < hearts.length; i++) for (let j = i + 1; j < hearts.length; j++) {
+    const a = hearts[i], b = hearts[j];
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const dist = Math.sqrt(dx * dx + dy * dy), md = a.size + b.size;
+    if (dist < md && dist > 0) {
+      const nx = dx / dist, ny = dy / dist;
+      const dvn = (a.vx - b.vx) * nx + (a.vy - b.vy) * ny;
+      if (dvn > 0) { a.vx -= dvn * nx; a.vy -= dvn * ny; b.vx += dvn * nx; b.vy += dvn * ny; }
+      const o = md - dist;
+      a.x -= nx * o / 2; a.y -= ny * o / 2;
+      b.x += nx * o / 2; b.y += ny * o / 2;
+    }
+  }
+
+  for (let i = particles.length - 1; i >= 0; i--) {
+    particles[i].update(); particles[i].draw();
+    if (particles[i].life <= 0) particles.splice(i, 1);
+  }
+
+  renderGL();
+  requestAnimationFrame(animate);
+}
+animate();
+
+function handleInteract(cx, cy) {
+  if (!isInteractive) return;
+  for (let i = hearts.length - 1; i >= 0; i--) {
+    if (hearts[i].isClicked(cx, cy)) {
+      const s = hearts[i].split();
+      hearts.splice(i, 1);
+      hearts.push(...s);
+      break;
+    }
+  }
+}
+window.addEventListener('click', e => handleInteract(e.clientX, e.clientY));
+window.addEventListener('touchstart', e => { if (isInteractive && e.touches.length > 0) handleInteract(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
+
+btnYes.addEventListener('click', () => {
+  card1.classList.add('fade-out');
+  btnNo.style.opacity = '0';
+  btnNo.style.pointerEvents = 'none';
+  noVisible = false;
+  setTimeout(() => {
+    card1.style.display = 'none';
+    card2.classList.add('fade-in');
+    wrapLetters(loveMessage);
+    canvas.style.pointerEvents = 'auto';
+    isInteractive = true;
+    for (let i = 0; i < 50; i++) hearts.push(new Heart3D(Math.random() * W, Math.random() * H, Math.random() * 15 + 15));
+  }, 600);
+});
+</script>
+</body>
+</html>
