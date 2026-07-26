@@ -4,8 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Для тебя 💕</title>
-<link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
-<link rel="apple-touch-icon" href="favicon.png">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="android-chrome-192x192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<meta name="theme-color" content="#ffb6c8">
 <style>
   * {
     margin: 0; padding: 0; box-sizing: border-box;
@@ -208,12 +213,86 @@
   }
   #soundToggle:hover  { transform: scale(1.1); background: rgba(255,255,255,0.3); }
   #soundToggle:active { transform: scale(0.92); }
+    /* ---------- игра ---------- */
+  #gameCanvas { z-index: 4; pointer-events: none; }
+  #gameCanvas.on { pointer-events: auto; }
+
+  #gameLayer { position: fixed; inset: 0; z-index: 5; display: none; pointer-events: none; }
+  #gameLayer.on { display: block; }
+
+  #gameHud {
+    position: absolute; top: 18px; left: 0; right: 0;
+    text-align: center; color: #4e0f2b;
+    text-shadow: 0 2px 12px rgba(255,255,255,0.75);
+  }
+  #gameScore { font-size: clamp(2.2rem, 9vw, 3.4rem); font-weight: 800; line-height: 1; }
+  #gameBest  { font-size: 0.82rem; font-weight: 700; opacity: 0.7; margin-top: 4px; }
+
+  .game-panel {
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    width: min(360px, 86vw);
+    padding: 26px 22px; border-radius: 30px;
+    text-align: center; pointer-events: auto; color: #4e0f2b;
+    background: rgba(255,255,255,0.16);
+    border: 1px solid rgba(255,255,255,0.42);
+    backdrop-filter: blur(14px) saturate(150%);
+    -webkit-backdrop-filter: blur(14px) saturate(150%);
+    box-shadow: 0 18px 50px rgba(150,30,80,0.22), inset 0 1px 0 rgba(255,255,255,0.5);
+    animation: smoothAppear 0.45s ease forwards;
+  }
+  .game-panel.hidden { display: none; }
+  .game-title { font-size: clamp(1.2rem, 5.4vw, 1.6rem); font-weight: 800; margin-bottom: 10px; }
+  .game-sub   { font-size: 0.95rem; font-weight: 600; line-height: 1.55; opacity: 0.88; margin-bottom: 20px; }
+  .game-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .game-btn {
+    font-family: inherit; font-size: 1rem; font-weight: 700;
+    padding: 12px 24px; border-radius: 999px; cursor: pointer; color: #4e0f2b;
+    border: 1px solid rgba(255,255,255,0.5);
+    background: rgba(255,255,255,0.28);
+    transition: transform 0.16s cubic-bezier(.34,1.56,.64,1), background 0.2s ease;
+  }
+  .game-btn:hover  { transform: scale(1.06); background: rgba(255,255,255,0.42); }
+  .game-btn:active { transform: scale(0.95); }
+  .game-btn.ghost  { background: rgba(255,255,255,0.12); }
+
+  .game-hidden { opacity: 0 !important; pointer-events: none !important; transition: opacity 0.35s ease; }
+
+  #comboBadge {
+    position: fixed; z-index: 6; left: 50%; bottom: 26px;
+    transform: translateX(-50%) scale(0.82);
+    padding: 8px 18px; border-radius: 999px;
+    font-weight: 800; font-size: 0.95rem; color: #4e0f2b;
+    background: rgba(255,255,255,0.22);
+    border: 1px solid rgba(255,255,255,0.45);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s cubic-bezier(.34,1.56,.64,1);
+  }
+  #comboBadge.on { opacity: 1; transform: translateX(-50%) scale(1); }
 </style>
 </head>
 <body>
 
 <canvas id="heartCanvas"></canvas>
 <canvas id="glassCanvas"></canvas>
+
+<canvas id="gameCanvas"></canvas>
+<div id="gameLayer">
+  <div id="gameHud">
+    <div id="gameScore">0</div>
+    <div id="gameBest">Лучший: 0</div>
+  </div>
+  <div class="game-panel" id="gamePanel">
+    <div class="game-title" id="gameTitle">Секретный уровень 💗</div>
+    <div class="game-sub" id="gameSub"></div>
+    <div class="game-actions">
+      <button class="game-btn" id="gamePlay">Полетели</button>
+      <button class="game-btn ghost" id="gameExit">Выйти</button>
+    </div>
+  </div>
+</div>
+<div id="comboBadge"></div>
 
 <div class="stage">
   <div class="card floating" id="card1">
@@ -1389,6 +1468,7 @@ function handleInteract(cx, cy) {
         sfx.split(cx);
         hearts.splice(i, 1);
         for (let j = 0; j < parts.length; j++) hearts.push(parts[j]);
+        registerPop();
         return;
       }
     }
@@ -1422,6 +1502,367 @@ if (window.PointerEvent) {
 ['pointerdown', 'touchstart', 'keydown'].forEach(ev =>
   window.addEventListener(ev, () => sfx.arm(), { capture: true, passive: true })
 );
+
+/* ============================================================
+   КОМБО: 10 сердечек за 10 секунд → секретная игра
+   ============================================================ */
+const comboBadge = document.getElementById('comboBadge');
+let popStreak = [];
+let comboHideTimer = null;
+
+function showCombo(n) {
+  clearTimeout(comboHideTimer);
+  if (n < 3) { comboBadge.classList.remove('on'); return; }
+  comboBadge.textContent = '💗 ' + n + ' / 10';
+  comboBadge.classList.add('on');
+  comboHideTimer = setTimeout(() => comboBadge.classList.remove('on'), 1600);
+}
+
+function registerPop() {
+  const t = performance.now();
+  popStreak.push(t);
+  while (popStreak.length && t - popStreak[0] > 10000) popStreak.shift();
+  if (popStreak.length >= 10 && !game.open) {
+    popStreak.length = 0;
+    comboBadge.classList.remove('on');
+    game.enter();
+    return;
+  }
+  showCombo(popStreak.length);
+}
+
+/* ============================================================
+   FLAPPY HEART — процедурная карта в стиле сайта
+   ============================================================ */
+const game = (() => {
+  const cv = document.getElementById('gameCanvas');
+  const g = cv.getContext('2d');
+  const layer = document.getElementById('gameLayer');
+  const panel = document.getElementById('gamePanel');
+  const titleEl = document.getElementById('gameTitle');
+  const subEl = document.getElementById('gameSub');
+  const scoreEl = document.getElementById('gameScore');
+  const bestEl = document.getElementById('gameBest');
+  const playBtn = document.getElementById('gamePlay');
+  const exitBtn = document.getElementById('gameExit');
+
+  let open = false, playing = false, dead = false;
+  let bird = null, cols = [], score = 0, best = 0;
+  let walk = 0, seed = 7, shake = 0;
+  let savedCard1 = false, savedCard2 = false, savedNo = false;
+
+  try { best = parseInt(localStorage.getItem('flappyHeartBest') || '0', 10) || 0; } catch (e) {}
+
+  const GRAV = 0.0026;
+  const FLAP = -0.72;
+
+  // масштаб: игра одинаково играется и на телефоне, и на большом экране
+  const S = () => Math.min(1.35, Math.max(0.6, H / 780));
+
+  // детерминированный ГПСЧ — карта генерируется на ходу, seed новый на каждый забег
+  function rnd() {
+    seed = (seed * 1664525 + 1013904223) % 4294967296;
+    return seed / 4294967296;
+  }
+
+  function addColumn(x) {
+    const s = S();
+    const w = (isMobile ? 62 : 78) * s;
+    const gapMin = (isMobile ? 138 : 152) * s;
+    const gapH = Math.max(gapMin, (isMobile ? 210 : 235) * s - score * 3.0 * s);
+    const margin = 64 * s;
+    const lo = margin + gapH / 2;
+    const hi = H - margin - gapH / 2;
+
+    // случайное блуждание центра прохода: карта плавная, но непредсказуемая
+    walk += (rnd() - 0.5) * 280 * s;
+    if (walk < lo) walk = lo + (lo - walk) * 0.5;
+    if (walk > hi) walk = hi - (walk - hi) * 0.5;
+    walk = Math.max(lo, Math.min(hi, walk));
+
+    const moving = score > 7 && rnd() < 0.32;
+    cols.push({
+      x, w, gapY: walk, gapH,
+      amp: moving ? (26 + rnd() * 42) * s : 0,
+      sp: 0.0008 + rnd() * 0.0009,
+      ph: rnd() * 6.283,
+      passed: false,
+      coin: rnd() < 0.55,
+      coinGot: false
+    });
+  }
+
+  const gapCenter = (c, time) => c.amp ? c.gapY + Math.sin(time * c.sp + c.ph) * c.amp : c.gapY;
+
+  function rr(x, y, w, h, r) {
+    const k = Math.min(r, w / 2, h / 2);
+    g.beginPath();
+    g.moveTo(x + k, y);
+    g.lineTo(x + w - k, y);
+    g.quadraticCurveTo(x + w, y, x + w, y + k);
+    g.lineTo(x + w, y + h - k);
+    g.quadraticCurveTo(x + w, y + h, x + w - k, y + h);
+    g.lineTo(x + k, y + h);
+    g.quadraticCurveTo(x, y + h, x, y + h - k);
+    g.lineTo(x, y + k);
+    g.quadraticCurveTo(x, y, x + k, y);
+    g.closePath();
+  }
+
+  function drawCol(c, gy, s) {
+    if (c.x > W + 40 || c.x + c.w < -40) return;
+    const topH = gy - c.gapH / 2;
+    const botY = gy + c.gapH / 2;
+
+    const grad = g.createLinearGradient(c.x, 0, c.x + c.w, 0);
+    grad.addColorStop(0,    'rgba(255,255,255,0.46)');
+    grad.addColorStop(0.35, 'rgba(255,196,220,0.34)');
+    grad.addColorStop(1,    'rgba(212,58,118,0.30)');
+    g.fillStyle = grad;
+    g.strokeStyle = 'rgba(255,255,255,0.6)';
+    g.lineWidth = 1.4;
+
+    const r = 16 * s;
+    rr(c.x, -60, c.w, topH + 60, r); g.fill(); g.stroke();
+    rr(c.x, botY, c.w, H - botY + 60, r); g.fill(); g.stroke();
+
+    // «губы» у самого проёма — как у труб в оригинале, но стеклянные
+    const lipH = 15 * s, over = 7 * s;
+    g.fillStyle = 'rgba(255,255,255,0.5)';
+    rr(c.x - over, topH - lipH, c.w + over * 2, lipH, 9 * s); g.fill(); g.stroke();
+    rr(c.x - over, botY, c.w + over * 2, lipH, 9 * s); g.fill(); g.stroke();
+
+    // вертикальный блик
+    g.fillStyle = 'rgba(255,255,255,0.32)';
+    g.fillRect(c.x + 4 * s, -60, 2.4 * s, topH + 60 - lipH);
+    g.fillRect(c.x + 4 * s, botY + lipH, 2.4 * s, H - botY);
+  }
+
+  function drawCoin(c, gy, time, s) {
+    if (!c.coin || c.coinGot || c.x > W + 40 || c.x + c.w < -40) return;
+    const size = 20 * s;
+    const sp = heartSprite(3, size, 0);
+    const p = 1 + Math.sin(time * 0.006 + c.ph) * 0.13;
+    g.save();
+    g.globalAlpha = 0.95;
+    g.translate(c.x + c.w / 2, gy);
+    g.rotate(Math.sin(time * 0.003 + c.ph) * 0.28);
+    const k = (size / sp.d) * p;
+    g.scale(k, k);
+    g.drawImage(sp.cv, -sp.half, -sp.half);
+    g.restore();
+  }
+
+  function drawBird(time, s) {
+    const size = 34 * s;
+    const sp = heartSprite(1, size, 0);
+    const ft = Math.min(1, (time - bird.lastFlap) / 260);
+    const squash = 1 + (1 - ft) * 0.2;
+    g.save();
+    g.translate(bird.x, bird.y);
+    g.rotate(bird.rot);
+    const k = size / sp.d;
+    g.scale(k * squash, k / squash);
+    g.shadowColor = 'rgba(190,30,80,0.4)';
+    g.shadowBlur = 22;
+    g.drawImage(sp.cv, -sp.half, -sp.half);
+    g.restore();
+  }
+
+  function addScore(n) {
+    score += n;
+    scoreEl.textContent = score;
+  }
+
+  function die() {
+    if (dead) return;
+    playing = false;
+    dead = true;
+    shake = 15;
+    sfx.no(bird.x);
+    for (let i = 0; i < 26; i++) addSpark(bird.x, bird.y, 340 + Math.random() * 40);
+    ripples.push({ x: bird.x, y: bird.y, r: 10, a: 0.6 });
+    if (score > best) {
+      best = score;
+      try { localStorage.setItem('flappyHeartBest', String(best)); } catch (e) {}
+    }
+    bestEl.textContent = 'Лучший: ' + best;
+    titleEl.textContent = score >= 20 ? 'Ты профи 💗' : (score >= 8 ? 'Красиво летела!' : 'Ой...');
+    subEl.innerHTML = 'Очков: <b>' + score + '</b><br>Лучший результат: <b>' + best + '</b>';
+    playBtn.textContent = 'Ещё раз';
+    setTimeout(() => { if (dead) panel.classList.remove('hidden'); }, 550);
+  }
+
+  function collide(time, s) {
+    const r = 15 * s;
+    for (let i = 0; i < cols.length; i++) {
+      const c = cols[i];
+      const gy = gapCenter(c, time);
+      if (!c.passed && c.x + c.w < bird.x) {
+        c.passed = true;
+        addScore(1);
+        sfx.pop(bird.x);
+      }
+      if (bird.x + r > c.x && bird.x - r < c.x + c.w) {
+        if (bird.y - r < gy - c.gapH / 2 || bird.y + r > gy + c.gapH / 2) { die(); return; }
+      }
+      if (c.coin && !c.coinGot &&
+          Math.abs(bird.x - (c.x + c.w / 2)) < r + 14 * s &&
+          Math.abs(bird.y - gy) < r + 17 * s) {
+        c.coinGot = true;
+        addScore(2);
+        sfx.restore(bird.x);
+        for (let k = 0; k < 10; k++) addSpark(bird.x, bird.y, 45 + Math.random() * 20);
+      }
+    }
+    if (bird.y > H - 8 * s || bird.y < -40) die();
+  }
+
+  function start() {
+    const s = S();
+    seed = (Date.now() ^ Math.floor(Math.random() * 1e9)) % 4294967296 || 7;
+    cols = [];
+    score = 0;
+    dead = false;
+    playing = true;
+    shake = 0;
+    scoreEl.textContent = '0';
+    bestEl.textContent = 'Лучший: ' + best;
+    walk = H * 0.5;
+    bird = { x: W * (isMobile ? 0.28 : 0.3), y: H * 0.42, vy: FLAP * 0.55 * s, rot: 0, lastFlap: performance.now() };
+    let x = W + 130 * s;
+    const spacing = (isMobile ? 235 : 300) * s;
+    for (let i = 0; i < 4; i++) { addColumn(x); x += spacing; }
+    panel.classList.add('hidden');
+  }
+
+  function flap() {
+    if (!open || dead) return;
+    if (!playing) { start(); return; }
+    const s = S();
+    bird.vy = FLAP * s;
+    bird.lastFlap = performance.now();
+    sfx.tap(bird.x);
+    for (let i = 0; i < 4; i++) addSpark(bird.x - 8 * s, bird.y + 10 * s, 340 + Math.random() * 30);
+  }
+
+  function enter() {
+    if (open) return;
+    open = true;
+    playing = false;
+    dead = false;
+    savedCard1 = card1Visible;
+    savedCard2 = card2Visible;
+    savedNo = noVisible;
+    if (card1Visible) card1.classList.add('game-hidden');
+    if (card2Visible) card2.classList.add('game-hidden');
+    card1Visible = false;
+    card2Visible = false;
+    noVisible = false;
+    btnNo.style.visibility = 'hidden';
+    cv.classList.add('on');
+    layer.classList.add('on');
+    panel.classList.remove('hidden');
+    titleEl.textContent = 'Секретный уровень 💗';
+    subEl.innerHTML = 'Десять сердечек за десять секунд — ты нашла игру!<br>Тап или пробел, чтобы взлететь. Сердечки в проёмах дают +2.';
+    playBtn.textContent = 'Полетели';
+    scoreEl.textContent = '0';
+    bestEl.textContent = 'Лучший: ' + best;
+    cols = [];
+    score = 0;
+    bird = { x: W * 0.3, y: H * 0.45, vy: 0, rot: 0, lastFlap: 0 };
+    sfx.yes();
+  }
+
+  function exit() {
+    open = false;
+    playing = false;
+    dead = false;
+    cols = [];
+    cv.classList.remove('on');
+    layer.classList.remove('on');
+    g.setTransform(DPR, 0, 0, DPR, 0, 0);
+    g.clearRect(0, 0, W, H);
+    card1.classList.remove('game-hidden');
+    card2.classList.remove('game-hidden');
+    card1Visible = savedCard1;
+    card2Visible = savedCard2;
+    noVisible = savedNo;
+    if (savedNo) btnNo.style.visibility = '';
+  }
+
+  function resizeCv() {
+    cv.width = Math.round(W * DPR);
+    cv.height = Math.round(H * DPR);
+    cv.style.width = W + 'px';
+    cv.style.height = H + 'px';
+    g.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+
+  function frame(dt, time) {
+    if (!open) return;
+    const s = S();
+    const step = Math.min(34, dt > 0 ? dt : 16);
+
+    g.setTransform(DPR, 0, 0, DPR, 0, 0);
+    g.clearRect(0, 0, W, H);
+    if (shake > 0.3) {
+      g.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake);
+      shake *= 0.88;
+    }
+
+    if (playing) {
+      const speed = (0.26 + Math.min(0.13, score * 0.0035)) * s;
+      bird.vy += GRAV * s * step;
+      bird.y += bird.vy * step;
+      bird.rot = Math.max(-0.55, Math.min(1.15, (bird.vy / s) * 1.5));
+      for (let i = 0; i < cols.length; i++) cols[i].x -= speed * step;
+      while (cols.length && cols[0].x + cols[0].w < -80) cols.shift();
+      const spacing = (isMobile ? 235 : 300) * s;
+      const lastX = cols.length ? cols[cols.length - 1].x : W;
+      if (lastX < W + spacing) addColumn(lastX + spacing);   // карта достраивается бесконечно
+      if (Math.random() < 0.45) addSpark(bird.x - 12 * s, bird.y + 8 * s, 335 + Math.random() * 30);
+      collide(time, s);
+    } else if (dead) {
+      bird.vy += GRAV * s * step;
+      bird.y = Math.min(H + 80, bird.y + bird.vy * step);
+      bird.rot = Math.min(1.6, bird.rot + 0.0025 * step);
+    } else {
+      bird.y = H * 0.45 + Math.sin(time * 0.004) * 10 * s;
+      bird.rot = Math.sin(time * 0.004) * 0.12;
+    }
+
+    for (let i = 0; i < cols.length; i++) {
+      const c = cols[i];
+      const gy = gapCenter(c, time);
+      drawCol(c, gy, s);
+      drawCoin(c, gy, time, s);
+    }
+    g.fillStyle = 'rgba(255,255,255,0.18)';
+    g.fillRect(0, H - 6 * s, W, 6 * s);
+    drawBird(time, s);
+  }
+
+  cv.addEventListener('pointerdown', e => { e.preventDefault(); flap(); });
+  playBtn.addEventListener('click', () => { if (!playing || dead) start(); });
+  exitBtn.addEventListener('click', exit);
+  window.addEventListener('keydown', e => {
+    if (!open) return;
+    if (e.code === 'Space' || e.code === 'ArrowUp') {
+      e.preventDefault();
+      if (dead) start(); else flap();
+    } else if (e.code === 'Escape') {
+      exit();
+    }
+  });
+
+  return {
+    enter, exit, flap, frame,
+    resize: resizeCv,
+    get open() { return open; },
+    get playing() { return playing; }
+  };
+})();
 
 /* ============================================================
    РЕСАЙЗ И ЦИКЛ
@@ -1464,7 +1905,7 @@ function resize() {
     btnNo.style.left = noPos.x + 'px';
     btnNo.style.top = noPos.y + 'px';
   }
-
+  game.resize();
   makeScenery();
 }
 
@@ -1513,7 +1954,7 @@ function animate(time) {
   ctx.globalAlpha = 1;
 
   drawRipples();
-
+  if (game.open) game.frame(dt, time);
   if (!glassEveryOther || frameParity === 0) renderGL();
 }
 
