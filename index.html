@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Для тебя 💕</title>
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -213,27 +213,45 @@
   }
   #soundToggle:hover  { transform: scale(1.1); background: rgba(255,255,255,0.3); }
   #soundToggle:active { transform: scale(0.92); }
-    /* ---------- игра ---------- */
+  /* ---------- игра ---------- */
   #gameCanvas { z-index: 4; pointer-events: none; }
   #gameCanvas.on { pointer-events: auto; }
 
   #gameLayer { position: fixed; inset: 0; z-index: 5; display: none; pointer-events: none; }
-  #gameLayer.on { display: block; }
+  #gameLayer.on { display: flex; flex-direction: column; align-items: center; }
 
   #gameHud {
-    position: absolute; top: 18px; left: 0; right: 0;
-    text-align: center; color: #4e0f2b;
+    flex: 0 0 auto;
+    width: 100%;
+    padding-top: calc(10px + env(safe-area-inset-top, 0px));
+    text-align: center;
+    color: #4e0f2b;
     text-shadow: 0 2px 12px rgba(255,255,255,0.75);
   }
-  #gameScore { font-size: clamp(2.2rem, 9vw, 3.4rem); font-weight: 800; line-height: 1; }
-  #gameBest  { font-size: 0.82rem; font-weight: 700; opacity: 0.7; margin-top: 4px; }
+  #gameScore {
+    font-size: clamp(1.6rem, 7vmin, 3.2rem);
+    font-weight: 800;
+    line-height: 1.05;
+  }
+  #gameBest {
+    font-size: clamp(0.68rem, 2.4vmin, 0.85rem);
+    font-weight: 700;
+    opacity: 0.7;
+    margin-top: 2px;
+  }
 
   .game-panel {
-    position: absolute; left: 50%; top: 50%;
-    transform: translate(-50%, -50%);
-    width: min(360px, 86vw);
-    padding: 26px 22px; border-radius: 30px;
-    text-align: center; pointer-events: auto; color: #4e0f2b;
+    position: static;
+    transform: none;
+    margin: auto;
+    width: min(360px, 88vw);
+    max-height: calc(100% - 24px);
+    overflow-y: auto;
+    padding: clamp(16px, 4.2vmin, 26px) clamp(14px, 3.6vmin, 22px);
+    border-radius: clamp(20px, 5vmin, 30px);
+    text-align: center;
+    pointer-events: auto;
+    color: #4e0f2b;
     background: rgba(255,255,255,0.16);
     border: 1px solid rgba(255,255,255,0.42);
     backdrop-filter: blur(14px) saturate(150%);
@@ -242,12 +260,27 @@
     animation: smoothAppear 0.45s ease forwards;
   }
   .game-panel.hidden { display: none; }
-  .game-title { font-size: clamp(1.2rem, 5.4vw, 1.6rem); font-weight: 800; margin-bottom: 10px; }
-  .game-sub   { font-size: 0.95rem; font-weight: 600; line-height: 1.55; opacity: 0.88; margin-bottom: 20px; }
-  .game-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .game-title {
+    font-size: clamp(1rem, 4.4vmin, 1.6rem);
+    font-weight: 800;
+    margin-bottom: clamp(6px, 1.6vmin, 10px);
+  }
+  .game-sub {
+    font-size: clamp(0.8rem, 3vmin, 0.95rem);
+    font-weight: 600;
+    line-height: 1.5;
+    opacity: 0.88;
+    margin-bottom: clamp(12px, 3vmin, 20px);
+  }
+  .game-actions { display: flex; gap: clamp(8px, 2vmin, 10px); justify-content: center; flex-wrap: wrap; }
   .game-btn {
-    font-family: inherit; font-size: 1rem; font-weight: 700;
-    padding: 12px 24px; border-radius: 999px; cursor: pointer; color: #4e0f2b;
+    font-family: inherit;
+    font-size: clamp(0.85rem, 3.2vmin, 1rem);
+    font-weight: 700;
+    padding: clamp(9px, 2.4vmin, 12px) clamp(16px, 5vmin, 24px);
+    border-radius: 999px;
+    cursor: pointer;
+    color: #4e0f2b;
     border: 1px solid rgba(255,255,255,0.5);
     background: rgba(255,255,255,0.28);
     transition: transform 0.16s cubic-bezier(.34,1.56,.64,1), background 0.2s ease;
@@ -256,17 +289,37 @@
   .game-btn:active { transform: scale(0.95); }
   .game-btn.ghost  { background: rgba(255,255,255,0.12); }
 
+  /* низкие экраны: телефон в горизонтальной ориентации */
+  @media (max-height: 480px) {
+    #gameHud { padding-top: 4px; }
+    #gameScore { font-size: clamp(1.2rem, 8vh, 1.8rem); }
+    #gameBest { display: none; }
+    .game-panel { width: min(440px, 92vw); padding: 12px 16px; }
+    .game-sub { margin-bottom: 10px; line-height: 1.35; }
+    .game-actions { flex-wrap: nowrap; }
+  }
+
   .game-hidden { opacity: 0 !important; pointer-events: none !important; transition: opacity 0.35s ease; }
 
   #comboBadge {
-    position: fixed; z-index: 6; left: 50%; bottom: 26px;
+    position: fixed;
+    z-index: 6;
+    left: 50%;
+    bottom: calc(20px + env(safe-area-inset-bottom, 0px));
     transform: translateX(-50%) scale(0.82);
-    padding: 8px 18px; border-radius: 999px;
-    font-weight: 800; font-size: 0.95rem; color: #4e0f2b;
+    max-width: 80vw;
+    padding: clamp(6px, 1.8vmin, 8px) clamp(12px, 4vmin, 18px);
+    border-radius: 999px;
+    font-weight: 800;
+    font-size: clamp(0.8rem, 3vmin, 0.95rem);
+    white-space: nowrap;
+    color: #4e0f2b;
     background: rgba(255,255,255,0.22);
     border: 1px solid rgba(255,255,255,0.45);
-    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-    opacity: 0; pointer-events: none;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    opacity: 0;
+    pointer-events: none;
     transition: opacity 0.25s ease, transform 0.25s cubic-bezier(.34,1.56,.64,1);
   }
   #comboBadge.on { opacity: 1; transform: translateX(-50%) scale(1); }
@@ -1556,8 +1609,8 @@ const game = (() => {
   const GRAV = 0.0026;
   const FLAP = -0.72;
 
-  // масштаб: игра одинаково играется и на телефоне, и на большом экране
-  const S = () => Math.min(1.35, Math.max(0.6, H / 780));
+  // масштаб от меньшей стороны: на узком экране колонны не расползаются
+  const S = () => Math.min(1.35, Math.max(0.58, Math.min(H, W * 1.1) / 780));
 
   // детерминированный ГПСЧ — карта генерируется на ходу, seed новый на каждый забег
   function rnd() {
