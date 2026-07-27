@@ -426,6 +426,13 @@
           <i>Стеклянные фигуры и растущие уровни</i>
         </span>
       </button>
+      <button class="game-mode" id="modeSol">
+        <span class="game-mode-ico">🃏</span>
+        <span class="game-mode-txt">
+          <b>Косынка</b>
+          <i>7 колонн и 4 дома</i>
+        </span>
+      </button>
     </div>
     <div class="game-actions">
       <button class="game-btn" id="gamePlay">Полетели</button>
@@ -1052,6 +1059,7 @@ function makePass() {
 }
 const passCards = makePass();
 const passNo = makePass();
+const passExtra = makePass();
 
 function compile(type, src) {
   const sh = gl.createShader(type);
@@ -1109,6 +1117,7 @@ function initGL() {
 
   passCards.tex = makeTexture();
   passNo.tex = makeTexture();
+  passExtra.tex = makeTexture();
 
   uBg  = gl.getUniformLocation(prog, 'u_bg');
   uReg = gl.getUniformLocation(prog, 'u_reg');
@@ -1242,7 +1251,7 @@ function renderGL() {
         const others = [];
         for (let i = 0; i < gameModeEls.length; i++) {
           const el = gameModeEls[i];
-          if (el.offsetParent === null) continue;         // список скрыт
+          if (el.offsetParent === null) continue;
           const r = rectOf(el, true);
           if (!r) continue;
           if (el.classList.contains('sel')) rSel = r; else others.push(r);
@@ -1250,6 +1259,7 @@ function renderGL() {
         if (rSel || others.length) {
           runPass(passNo, reg, others[0] || null, rSel, others[1] || null, null, true);
         }
+        if (others[2]) runPass(passExtra, reg, others[2], null, null, null, true);
       }
     }
     gl.disable(gl.SCISSOR_TEST);
@@ -1734,7 +1744,8 @@ const game = (() => {
   const modeBtn = {
     fly: document.getElementById('modeFly'),
     run: document.getElementById('modeRun'),
-    tet: document.getElementById('modeTet')
+    tet: document.getElementById('modeTet'),
+    sol: document.getElementById('modeSol')
   };
   const hideEls = [
     document.getElementById('card1'),
@@ -1746,17 +1757,18 @@ const game = (() => {
   let open = false, playing = false, dead = false;
   let mode = 'fly', score = 0, shake = 0, seed = 1;
 
-  const BEST_KEY = { fly:'flappyHeartBest', run:'runHeartBest', tet:'tetHeartBest' };
-  const best = { fly:0, run:0, tet:0 };
+  const BEST_KEY = { fly:'flappyHeartBest', run:'runHeartBest', tet:'tetHeartBest', sol:'solHeartBest' };
+  const best = { fly:0, run:0, tet:0, sol:0 };
   for (const k in BEST_KEY) best[k] = +(localStorage.getItem(BEST_KEY[k]) || 0) || 0;
 
   const HINT = {
     fly: 'Тапай или пробел — взлёт',
     run: 'Тапай или пробел — прыжок',
-    tet: 'Свайп — сдвиг, тап — поворот, свайп вниз — сброс'
+    tet: 'Свайп — сдвиг, тап — поворот, свайп вниз — сброс',
+    sol: 'Убирай пары карт с суммой 13, короли уходят сами'
   };
-  const PLAY_LABEL = { fly:'Полетели', run:'Побежали', tet:'Начать' };
-  const TITLE = { fly:'Полёт сердца', run:'Забег', tet:'Тетрис' };
+  const PLAY_LABEL = { fly:'Полетели', run:'Побежали', tet:'Начать', sol:'Раздать' };
+  const TITLE = { fly:'Полёт сердца', run:'Забег', tet:'Тетрис', sol:'Косынка' };
 
   const S = () => Math.min(1.35, Math.max(0.58, Math.min(H, W * 1.1) / 780));
   const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
@@ -1810,17 +1822,24 @@ const game = (() => {
   const GRAV_F = 0.0026, FLAP = -0.72;
   let bird = { y: 0, v: 0 }, cols = [], flySpd = 0;
 
-  function gapCenter(gapH) {
-    const m = 70 * S();
-    const room = Math.max(20, H - gapH - m * 2);
-    return m + gapH / 2 + rnd() * room;
-  }
+  function gapCenter(gapH, prev) {
+  const s = S(), m = 70 * s;
+  const lo = m + gapH / 2;
+  const hi = H - m - gapH / 2;
+  if (hi <= lo) return H / 2;
+  if (prev == null) return lo + rnd() * (hi - lo);
+  // максимальный сдвиг по вертикали от предыдущего окна — столько сердце реально пролетает
+  const maxStep = Math.min(hi - lo, Math.max(80 * s, gapH * 0.5));
+  const c = prev + (rnd() * 2 - 1) * maxStep;
+  return Math.max(lo, Math.min(hi, c));
+}
 
-  function addColumn(x) {
-    const s = S();
-    const gapH = Math.max(125 * s, (215 - Math.min(60, score * 2.2)) * s);
-    cols.push({ x, w: 66 * s, gy: gapCenter(gapH), gap: gapH, passed: false });
-  }
+function addColumn(x) {
+  const s = S();
+  const gapH = Math.max(135 * s, (215 - Math.min(55, score * 1.8)) * s);
+  const prev = cols.length ? cols[cols.length - 1].gy : null;
+  cols.push({ x, w: 66 * s, gy: gapCenter(gapH, prev), gap: gapH, passed: false });
+}
 
   function startFly() {
     const s = S();
@@ -2057,9 +2076,9 @@ const game = (() => {
   let flashRows = [], flashT = 0;
 
   function tetMetrics() {
-    const cell = Math.max(10, Math.floor(Math.min(W * 0.9 / COLS, H * 0.74 / ROWS)));
+    const cell = Math.max(9, Math.floor(Math.min(W * 0.94 / COLS, H * 0.86 / ROWS)));
     const bw = cell * COLS, bh = cell * ROWS;
-    return { cell, bw, bh, ox: (W - bw) / 2, oy: Math.max(H * 0.13, (H - bh) / 2) };
+    return { cell, bw, bh, ox: (W - bw) / 2, oy: Math.max(H * 0.075, (H - bh) / 2) };
   }
   const emptyRow = () => new Array(COLS).fill(-1);
 
@@ -2226,7 +2245,284 @@ const game = (() => {
 
     bestEl.textContent = `Лучший: ${best.tet} · Уровень ${level}`;
   }
+/* =========================================================
+   РЕЖИМ 4 — ПАСЬЯНС «ПИРАМИДА»
+   ========================================================= */
+/* =========================================================
+   РЕЖИМ 4 — КОСЫНКА (Клондайк)
+   ========================================================= */
+const SUITS = ['♥', '♦', '♣', '♠'];
+const RANKS = ['', 'A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+const isRed = c => c.s < 2;
 
+let tab = [], found = [[], [], [], []], stock = [], waste = [], sel = null;
+
+function solMetrics() {
+  const gapX = Math.max(3, W * 0.008);
+  const cw = Math.max(24, Math.min((W * 0.98 - gapX * 6) / 7, H * 0.145));
+  const ch = cw * 1.42;
+  const ox = (W - (7 * (cw + gapX) - gapX)) / 2;
+  const topY = Math.max(H * 0.085, 44);
+  const tabY = topY + ch + Math.max(10, ch * 0.22);
+  return {
+    cw, ch, gapX, ox, topY, tabY,
+    stepUp: Math.max(11, ch * 0.27),
+    stepDown: Math.max(5, ch * 0.13)
+  };
+}
+const colX = (i, m) => m.ox + i * (m.cw + m.gapX);
+
+function pileOffsets(p, m) {
+  const offs = [];
+  let y = 0;
+  for (let i = 0; i < tab[p].length; i++) { offs.push(y); y += tab[p][i].up ? m.stepUp : m.stepDown; }
+  return offs;
+}
+
+function startSol() {
+  const deck = [];
+  for (let s = 0; s < 4; s++) for (let r = 1; r <= 13; r++) deck.push({ r, s });
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1));
+    const t = deck[i]; deck[i] = deck[j]; deck[j] = t;
+  }
+  tab = [];
+  for (let p = 0; p < 7; p++) {
+    const pile = [];
+    for (let i = 0; i <= p; i++) pile.push({ c: deck.pop(), up: i === p });
+    tab.push(pile);
+  }
+  found = [[], [], [], []];
+  stock = deck; waste = []; sel = null;
+}
+
+function sameRef(a, b) {
+  if (!a || !b || a.t !== b.t) return false;
+  return a.t === 'waste' || (a.p === b.p && a.i === b.i);
+}
+const canStack = (c, onto) => c.r === onto.r - 1 && isRed(c) !== isRed(onto);
+
+function selCards() {
+  if (!sel) return null;
+  if (sel.t === 'waste') return waste.length ? [waste[waste.length - 1]] : null;
+  const pile = tab[sel.p];
+  if (!pile || sel.i >= pile.length || !pile[sel.i].up) return null;
+  return pile.slice(sel.i).map(o => o.c);
+}
+
+function removeSel(n) {
+  if (sel.t === 'waste') { waste.pop(); return; }
+  const pile = tab[sel.p];
+  pile.splice(sel.i, n);
+  if (pile.length && !pile[pile.length - 1].up) {
+    pile[pile.length - 1].up = true;
+    addScore(1); beep('letter');
+  }
+}
+
+function tryFound(f) {
+  const cards = selCards();
+  if (!cards || cards.length !== 1) return false;
+  const c = cards[0];
+  if (c.s !== f || c.r !== found[f].length + 1) return false;
+  found[f].push(c);
+  removeSel(1);
+  addScore(2); beep('pop');
+  const m = solMetrics();
+  for (let i = 0; i < 6; i++) spark(colX(3 + f, m) + rnd() * m.cw, m.topY + rnd() * m.ch, 335 + rnd() * 30);
+  if (found[0].length + found[1].length + found[2].length + found[3].length === 52) {
+    addScore(30); finish(true);
+  }
+  return true;
+}
+
+function tryTab(p) {
+  const cards = selCards();
+  if (!cards) return false;
+  if (sel.t === 'tab' && sel.p === p) return false;
+  const dst = tab[p];
+  const ok = dst.length ? canStack(cards[0], dst[dst.length - 1].c) : cards[0].r === 13;
+  if (!ok) return false;
+  const n = cards.length;
+  for (const c of cards) dst.push({ c, up: true });
+  // важно: сначала докладываем, потом снимаем — индексы источника не сдвигаются
+  tab[p].length = dst.length;
+  removeSel(n);
+  beep('hover');
+  return true;
+}
+
+function autoFound() {
+  const cards = selCards();
+  if (!cards || cards.length !== 1) return false;
+  return tryFound(cards[0].s);
+}
+
+function dealStock() {
+  if (stock.length) { waste.push(stock.pop()); sel = null; beep('tap'); return; }
+  if (waste.length) { while (waste.length) stock.push(waste.pop()); sel = null; beep('split'); }
+}
+
+function solTap(x, y) {
+  const m = solMetrics();
+
+  // верхний ряд: колода, сброс, дома
+  if (y >= m.topY && y <= m.topY + m.ch) {
+    if (x >= colX(0, m) && x <= colX(0, m) + m.cw) { dealStock(); return; }
+    if (x >= colX(1, m) && x <= colX(1, m) + m.cw) {
+      if (!waste.length) return;
+      const ref = { t: 'waste' };
+      if (sameRef(sel, ref)) { autoFound(); sel = null; }
+      else { sel = ref; beep('hover'); }
+      return;
+    }
+    for (let f = 0; f < 4; f++) {
+      const cx = colX(3 + f, m);
+      if (x >= cx && x <= cx + m.cw) { if (sel && tryFound(f)) sel = null; return; }
+    }
+    return;
+  }
+
+  // колонки
+  for (let p = 0; p < 7; p++) {
+    const cx = colX(p, m);
+    if (x < cx || x > cx + m.cw) continue;
+    const pile = tab[p];
+
+    if (!pile.length) { if (sel && tryTab(p)) sel = null; return; }
+
+    const offs = pileOffsets(p, m);
+    let hit = -1;
+    for (let i = pile.length - 1; i >= 0; i--) {
+      const top = m.tabY + offs[i];
+      const bot = (i === pile.length - 1) ? top + m.ch : m.tabY + offs[i + 1];
+      if (y >= top && y <= bot) { hit = i; break; }
+    }
+    if (hit < 0) { if (sel && tryTab(p)) sel = null; return; }
+
+    // сначала пробуем положить выбранное сюда
+    if (sel && !(sel.t === 'tab' && sel.p === p)) {
+      if (tryTab(p)) { sel = null; return; }
+    }
+
+    const card = pile[hit];
+    if (!card.up) {
+      if (hit === pile.length - 1) { card.up = true; addScore(1); beep('letter'); sel = null; }
+      return;
+    }
+
+    const ref = { t: 'tab', p, i: hit };
+    if (sameRef(sel, ref)) { autoFound(); sel = null; return; }
+    sel = ref;
+    beep('hover');
+    return;
+  }
+  sel = null;
+}
+
+/* ---------- рисование ---------- */
+function roundPath(x, y, w, h, r) {
+  g.beginPath();
+  if (g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h);
+}
+
+function drawCard(x, y, c, m, selected) {
+  roundPath(x, y, m.cw, m.ch, m.cw * 0.14);
+  g.fillStyle = glassGrad(x, y, x + m.cw, y + m.ch);
+  g.fill();
+  g.lineWidth = selected ? 2.6 : 1.4;
+  g.strokeStyle = selected ? 'rgba(255,255,255,0.95)' : 'rgba(120,10,55,0.32)';
+  g.stroke();
+
+  const fs = Math.max(9, Math.round(m.cw * 0.34));
+  g.fillStyle = isRed(c) ? '#c8103f' : '#4a0a20';
+  g.textBaseline = 'top';
+  g.textAlign = 'left';
+  g.font = `800 ${fs}px -apple-system, 'Segoe UI', sans-serif`;
+  g.fillText(RANKS[c.r], x + m.cw * 0.1, y + m.ch * 0.05);
+  g.textAlign = 'right';
+  g.font = `${fs}px -apple-system, 'Segoe UI', sans-serif`;
+  g.fillText(SUITS[c.s], x + m.cw * 0.9, y + m.ch * 0.05);
+}
+
+function drawBack(x, y, m) {
+  roundPath(x, y, m.cw, m.ch, m.cw * 0.14);
+  g.fillStyle = glassGrad(x, y + m.ch, x + m.cw, y);
+  g.fill();
+  g.lineWidth = 1.4;
+  g.strokeStyle = 'rgba(120,10,55,0.32)';
+  g.stroke();
+  heartAt(x + m.cw * 0.5, y + m.ch * 0.42, m.cw * 0.5, 0, 0.85);
+}
+
+function drawSlot(x, y, m, label) {
+  roundPath(x, y, m.cw, m.ch, m.cw * 0.14);
+  g.strokeStyle = 'rgba(255,255,255,0.5)';
+  g.lineWidth = 1.3;
+  g.stroke();
+  if (label) {
+    g.fillStyle = 'rgba(78,15,43,0.45)';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.font = `700 ${Math.round(m.cw * 0.44)}px -apple-system, sans-serif`;
+    g.fillText(label, x + m.cw * 0.5, y + m.ch * 0.5);
+  }
+}
+
+function frameSol() {
+  if (!tab.length) return;
+  const m = solMetrics();
+
+  if (stock.length) drawBack(colX(0, m), m.topY, m);
+  else drawSlot(colX(0, m), m.topY, m, waste.length ? '↻' : '');
+
+  if (waste.length) drawCard(colX(1, m), m.topY, waste[waste.length - 1], m, sel && sel.t === 'waste');
+  else drawSlot(colX(1, m), m.topY, m, '');
+
+  for (let f = 0; f < 4; f++) {
+    const x = colX(3 + f, m);
+    if (found[f].length) drawCard(x, m.topY, found[f][found[f].length - 1], m, false);
+    else drawSlot(x, m.topY, m, SUITS[f]);
+  }
+
+  for (let p = 0; p < 7; p++) {
+    const x = colX(p, m);
+    const pile = tab[p];
+    if (!pile.length) { drawSlot(x, m.tabY, m, ''); continue; }
+    const offs = pileOffsets(p, m);
+    for (let i = 0; i < pile.length; i++) {
+      const y = m.tabY + offs[i];
+      if (!pile[i].up) drawBack(x, y, m);
+      else drawCard(x, y, pile[i].c, m, sel && sel.t === 'tab' && sel.p === p && i >= sel.i);
+    }
+  }
+
+  g.fillStyle = 'rgba(78,15,43,0.7)';
+  g.textAlign = 'center';
+  g.textBaseline = 'bottom';
+  g.font = `700 ${Math.max(11, Math.round(m.cw * 0.26))}px -apple-system, sans-serif`;
+  g.fillText(`В колоде: ${stock.length} · Дома: ${found[0].length + found[1].length + found[2].length + found[3].length}/52`,
+    W / 2, H - Math.max(10, H * 0.02));
+}
+
+function finish(win) {
+  if (!playing) return;
+  playing = false;
+  dead = true;
+  beep(win ? 'yes' : 'no');
+  if (score > best[mode]) {
+    best[mode] = score;
+    try { localStorage.setItem(BEST_KEY[mode], String(score)); } catch (e) {}
+  }
+  setTimeout(() => {
+    if (!open || playing) return;
+    panel.classList.remove('hidden');
+    if (modesEl) modesEl.classList.remove('hidden');
+    titleEl.textContent = win ? 'Пирамида разобрана! 💗' : 'Ходов больше нет';
+    subEl.textContent = `Очки: ${score} · Лучший: ${best[mode]}`;
+    playBtn.textContent = 'Ещё раз';
+  }, 500);
+}
   /* =========================================================
      ОБЩЕЕ УПРАВЛЕНИЕ РЕЖИМАМИ
      ========================================================= */
@@ -2259,6 +2555,7 @@ const game = (() => {
     if (modesEl) modesEl.classList.add('hidden');
     if (mode === 'fly') startFly();
     else if (mode === 'run') startRun();
+    else if (mode === 'sol') startSol();
     else startTet();
   }
 
@@ -2288,6 +2585,7 @@ const game = (() => {
     if (!playing) { if (!dead) start(); return; }
     if (mode === 'fly') flap();
     else if (mode === 'run') jump();
+    else if (mode === 'tet') tetRotate();
     else tetRotate();
   }
 
@@ -2330,6 +2628,7 @@ const game = (() => {
     }
     if (mode === 'fly') frameFly(playing ? dt : 0);
     else if (mode === 'run') frameRun(playing ? dt : 0);
+    else if (mode === 'sol') frameSol();
     else frameTet(dt);
     g.restore();
   }
@@ -2345,6 +2644,8 @@ const game = (() => {
       ptr.t = performance.now(); ptr.moved = 0;
       return;
     }
+    if (mode === 'sol' && playing) { solTap(e.clientX, e.clientY); return; }
+
     action();
   }, { passive: false });
 
@@ -2435,6 +2736,7 @@ function resize() {
     gl.viewport(0, 0, glassCanvas.width, glassCanvas.height);
     passCards.alloc = false;
     passNo.alloc = false;
+    passExtra.alloc = false;
   }
 
   heartSprites.clear();
